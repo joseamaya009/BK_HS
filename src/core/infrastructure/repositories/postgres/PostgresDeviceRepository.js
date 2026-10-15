@@ -745,7 +745,10 @@ class PostgresDeviceRepository extends DeviceRepository {
         [deviceId, homeId],
       );
       if (!deleted.rowCount) return deleted;
-      deleted.rows[0].device_code = linked.rows[0].device_code;
+      // La capa HTTP trabaja con propiedades camelCase. Mantener este
+      // contrato permite al controlador publicar el comando MQTT `unlink`
+      // después de retirar la asociación en la base de datos.
+      deleted.rows[0].deviceCode = linked.rows[0].device_code;
       return deleted;
     });
 
