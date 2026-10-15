@@ -57,7 +57,11 @@ test('obtiene la configuración MQTT del entorno y restringe el QoS', () => {
   assert.equal(config.brokerUrl, 'mqtt://localhost:1883');
   assert.equal(config.options.clientId, 'hidrosmart-test');
   assert.equal(config.qos, 1);
-  assert.equal(config.allowLegacyTelemetry, true);
+  assert.equal(config.allowLegacyTelemetry, false);
+  assert.equal(getMqttConfig({
+    MQTT_BROKER_URL: 'mqtt://localhost:1883',
+    MQTT_ALLOW_LEGACY_TELEMETRY: 'true'
+  }).allowLegacyTelemetry, true);
   assert.equal(getMqttConfig({
     MQTT_BROKER_URL: 'mqtt://localhost:1883',
     MQTT_ALLOW_LEGACY_TELEMETRY: 'false'

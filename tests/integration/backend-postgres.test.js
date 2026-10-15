@@ -21,6 +21,12 @@ async function requestJson(path, options = {}) {
   return { response, body: text ? JSON.parse(text) : null };
 }
 
+function sessionHeaders(response) {
+  const cookies = response.headers.getSetCookie().map((cookie) => cookie.split(';', 1)[0]);
+  const csrf = cookies.find((cookie) => cookie.startsWith('hidrosmart_csrf='))?.split('=', 2)[1];
+  return { cookie: cookies.join('; '), ...(csrf ? { 'x-csrf-token': decodeURIComponent(csrf) } : {}) };
+}
+
 test('health del backend y conexión PostgreSQL', { skip: !enabled }, async () => {
   const health = await fetch(`${apiUrl}/health`);
   assert.equal(health.status, 200);
@@ -44,7 +50,7 @@ test('health del backend y conexión PostgreSQL', { skip: !enabled }, async () =
   }
 });
 
-test('rutas protegidas rechazan solicitudes sin Bearer', { skip: !enabled }, async () => {
+test('rutas protegidas rechazan solicitudes sin sesion', { skip: !enabled }, async () => {
   for (const path of ['/api/v1/users/me', '/api/v1/homes', '/api/v1/devices', '/api/v1/consumption/summary', '/api/v1/privacy/export', '/api/v1/reports/consumption.pdf', '/api/v1/reports/consumption.xlsx']) {
     const response = await fetch(`${apiUrl}${path}`);
     assert.equal(response.status, 401, path);
@@ -57,10 +63,9 @@ test('usuario de integración accede solo al flujo protegido de consulta', { ski
     body: JSON.stringify({ email: userEmail, password: userPassword })
   });
   assert.equal(login.response.status, 200);
-  assert.ok(login.body?.data?.accessToken);
+  assert.ok(login.body?.data?.sessionId);
 
-  const token = login.body.data.accessToken;
-  const headers = { authorization: `Bearer ${token}` };
+  const headers = sessionHeaders(login.response);
   for (const path of ['/api/v1/users/me', '/api/v1/users/me/notifications', '/api/v1/homes', '/api/v1/devices']) {
     const result = await requestJson(path, { headers });
     assert.equal(result.response.status, 200, path);
@@ -68,8 +73,7 @@ test('usuario de integración accede solo al flujo protegido de consulta', { ski
 
   const logout = await requestJson('/api/v1/auth/logout', {
     method: 'POST',
-    headers,
-    body: JSON.stringify({ refreshToken: login.body.data.refreshToken })
+    headers
   });
   assert.equal(logout.response.status, 204);
 });
