@@ -1,5 +1,37 @@
 const required = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_SECRET'];
 
+function getTrustProxyHops(value) {
+  if (value === undefined || value === '') return 0;
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 5) {
+    throw new Error('TRUST_PROXY_HOPS debe ser un entero entre 0 y 5');
+  }
+  return parsed;
+}
+
+function getBoolean(value, fallback) {
+  if (value === undefined || value === '') return fallback;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error('Las variables booleanas deben ser true o false');
+}
+
+function getCookieSameSite(value) {
+  const normalized = (value || 'lax').toLowerCase();
+  if (!['lax', 'strict', 'none'].includes(normalized)) {
+    throw new Error('AUTH_COOKIE_SAME_SITE debe ser lax, strict o none');
+  }
+  return normalized;
+}
+
+function getDurationMs(value, name) {
+  const match = /^(\d+)\s*(ms|s|m|h|d)$/i.exec(value || '');
+  if (!match) throw new Error(`${name} debe tener formato 30d, 12h, 15m, 30s o 100ms`);
+  const factors = { ms: 1, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
+  return Number(match[1]) * factors[match[2].toLowerCase()];
+}
+
 function getEnv() {
   const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
   const missing = required.filter((key) => key !== 'DB_HOST' && key !== 'DB_PORT' && key !== 'DB_NAME' && key !== 'DB_USER' && key !== 'DB_PASSWORD' && !process.env[key]);
@@ -10,9 +42,17 @@ function getEnv() {
     throw new Error(`Faltan variables de entorno: ${[...new Set(missing)].join(', ')}`);
   }
 
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const cookieSecure = getBoolean(process.env.AUTH_COOKIE_SECURE, nodeEnv === 'production');
+  const cookieSameSite = getCookieSameSite(process.env.AUTH_COOKIE_SAME_SITE);
+  if (cookieSameSite === 'none' && !cookieSecure) {
+    throw new Error('AUTH_COOKIE_SECURE debe ser true cuando AUTH_COOKIE_SAME_SITE=none');
+  }
+
   return {
-    nodeEnv: process.env.NODE_ENV || 'development',
+    nodeEnv,
     port: Number(process.env.PORT || 3000),
+    trustProxyHops: getTrustProxyHops(process.env.TRUST_PROXY_HOPS),
     corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
     smtp: {
@@ -33,6 +73,16 @@ function getEnv() {
     actuatorCommandTimeoutBatchSize: Number(process.env.ACTUATOR_COMMAND_TIMEOUT_BATCH_SIZE || 100),
     authRateLimitWindowMs: Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 900000),
     authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX || 20),
+    authCookies: {
+      accessTokenName: process.env.AUTH_ACCESS_COOKIE_NAME || 'hidrosmart_access',
+      refreshTokenName: process.env.AUTH_REFRESH_COOKIE_NAME || 'hidrosmart_refresh',
+      csrfTokenName: process.env.AUTH_CSRF_COOKIE_NAME || 'hidrosmart_csrf',
+      csrfHeaderName: process.env.AUTH_CSRF_HEADER_NAME || 'X-CSRF-Token',
+      secure: cookieSecure,
+      sameSite: cookieSameSite,
+      domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
+      refreshMaxAgeMs: getDurationMs(process.env.JWT_REFRESH_EXPIRES_IN || '30d', 'JWT_REFRESH_EXPIRES_IN')
+    },
     db: {
       ...(hasDatabaseUrl ? { connectionString: process.env.DATABASE_URL } : {}),
       host: process.env.DB_HOST,
