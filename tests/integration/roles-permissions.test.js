@@ -54,6 +54,12 @@ async function requestJson(path, options = {}) {
   return { response, body: text ? JSON.parse(text) : null };
 }
 
+function sessionHeaders(response) {
+  const cookies = response.headers.getSetCookie().map((cookie) => cookie.split(';', 1)[0]);
+  const csrf = cookies.find((cookie) => cookie.startsWith('hidrosmart_csrf='))?.split('=', 2)[1];
+  return { cookie: cookies.join('; '), ...(csrf ? { 'x-csrf-token': decodeURIComponent(csrf) } : {}) };
+}
+
 test('matriz funcional de roles, permisos y rutas', { skip: !enabled }, async () => {
   for (const user of roleUsers) {
     const login = await requestJson('/api/v1/auth/login', {
@@ -61,9 +67,9 @@ test('matriz funcional de roles, permisos y rutas', { skip: !enabled }, async ()
       body: JSON.stringify({ email: user.email, password: user.password })
     });
     assert.equal(login.response.status, 200, `login ${user.role}`);
-    assert.ok(login.body?.data?.accessToken, `access token ${user.role}`);
+    assert.ok(login.body?.data?.sessionId, `session ${user.role}`);
 
-    const headers = { authorization: `Bearer ${login.body.data.accessToken}` };
+    const headers = sessionHeaders(login.response);
     const profile = await requestJson('/api/v1/users/me', { headers });
     assert.equal(profile.response.status, 200, `perfil ${user.role}`);
     assert.ok(profile.body?.data?.roles?.includes(user.role), `rol ${user.role}`);
@@ -85,8 +91,7 @@ test('matriz funcional de roles, permisos y rutas', { skip: !enabled }, async ()
 
     const logout = await requestJson('/api/v1/auth/logout', {
       method: 'POST',
-      headers,
-      body: JSON.stringify({ refreshToken: login.body.data.refreshToken })
+      headers
     });
     assert.equal(logout.response.status, 204, `logout ${user.role}`);
   }
