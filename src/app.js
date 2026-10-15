@@ -21,18 +21,25 @@ const recommendationRoutes = require('./api/recommendation.routes');
 const actuatorRoutes = require('./api/actuator.routes');
 const { notFound, errorHandler, requestContext } = require('./shared/http');
 const { getEnv } = require('./config/env');
+const { createCsrfProtection } = require('./api/security/authCookies');
 
 const app = express();
+const env = getEnv();
 
 app.disable('x-powered-by');
 // El backend recibe las peticiones del navegador a través de Nginx.
-app.set('trust proxy', 1);
+app.set('trust proxy', env.trustProxyHops);
 app.use(helmet());
 app.use(requestContext);
-app.use(cors({ origin: getEnv().corsOrigin.split(',').map((origin) => origin.trim()) }));
+app.use(cors({
+  origin: env.corsOrigin.split(',').map((origin) => origin.trim()),
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', env.authCookies.csrfHeaderName]
+}));
 // Permite transportar un avatar de hasta 2 MB en base64; el caso de uso
 // comprueba el tamaño binario real antes de persistirlo.
 app.use(express.json({ limit: '4mb' }));
+app.use(createCsrfProtection(env.authCookies));
 
 app.get('/', (_req, res) => {
   res.json({ name: 'Hidro Smart API', version: 'v1', status: 'ok' });
