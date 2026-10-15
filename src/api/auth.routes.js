@@ -48,7 +48,8 @@ const authController = new AuthController({
   getPasswordResetContext: new GetPasswordResetContext({ authRepository, tokenService: passwordTokenService }),
   resendEmailVerification: new ResendEmailVerification({ authRepository, tokenService: passwordTokenService, notificationService }),
   verifyEmail: new VerifyEmail({ authRepository, tokenService: passwordTokenService }),
-  notificationService
+  notificationService,
+  authCookies: env.authCookies
 });
 
 router.use(authRateLimiter);

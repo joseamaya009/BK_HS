@@ -7,8 +7,6 @@ class AuthResponse {
     return {
       userId: session.userId,
       sessionId: session.sessionId,
-      accessToken: session.accessToken,
-      refreshToken: session.refreshToken,
       refreshExpiresAt: session.refreshExpiresAt
     };
   }

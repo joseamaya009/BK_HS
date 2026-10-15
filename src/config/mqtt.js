@@ -49,7 +49,7 @@ function getMqttConfig(env = process.env) {
     // Compatibilidad temporal con el firmware anterior, que no enviaba
     // mqttMessageId. Debe desactivarse cuando todos los dispositivos estén
     // actualizados para recuperar la idempotencia proporcionada por el ESP32.
-    allowLegacyTelemetry: getBoolean(env.MQTT_ALLOW_LEGACY_TELEMETRY, true, 'MQTT_ALLOW_LEGACY_TELEMETRY'),
+    allowLegacyTelemetry: getBoolean(env.MQTT_ALLOW_LEGACY_TELEMETRY, false, 'MQTT_ALLOW_LEGACY_TELEMETRY'),
     maxPayloadBytes: getPositiveInteger(env.MQTT_MAX_PAYLOAD_BYTES, 16384, 'MQTT_MAX_PAYLOAD_BYTES') || 16384,
     options: {
       clientId: env.MQTT_CLIENT_ID || `hidrosmart-backend-${process.pid}`,

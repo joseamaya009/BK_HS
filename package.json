@@ -11,6 +11,7 @@
     "lint": "npm run check",
     "check": "node scripts/check-javascript.js",
     "seed:integration": "node scripts/seed-integration-users.js",
+    "simulate:iot": "node scripts/simulate-iot-e2e.js",
     "test": "node --test tests/unit/**/*.test.js",
     "test:integration": "node --test tests/integration/**/*.test.js"
   },
@@ -23,7 +24,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "mqtt": "^5.15.2",
-    "nodemailer": "^9.1.1",
+    "nodemailer": "^10.1.0",
     "pg": "^8.13.1"
   }
 }

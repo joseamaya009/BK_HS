@@ -4,9 +4,10 @@ const { AuthResponse } = require('../../core/application/dtos/responses/AuthResp
 const { ChangePasswordRequest } = require('../../core/application/dtos/requests/ChangePasswordRequest');
 const { RequestPasswordResetRequest } = require('../../core/application/dtos/requests/RequestPasswordResetRequest');
 const { ResetPasswordRequest } = require('../../core/application/dtos/requests/ResetPasswordRequest');
+const { clearSessionCookies, getCookie, setSessionCookies } = require('../security/authCookies');
 
 class AuthController {
-  constructor({ registerUser, loginUser, sessionService, changePassword, requestPasswordReset, resetPassword, getPasswordResetContext, resendEmailVerification, verifyEmail, notificationService, logger = console }) {
+  constructor({ registerUser, loginUser, sessionService, changePassword, requestPasswordReset, resetPassword, getPasswordResetContext, resendEmailVerification, verifyEmail, notificationService, authCookies, logger = console }) {
     this.registerUser = registerUser;
     this.loginUser = loginUser;
     this.sessionService = sessionService;
@@ -17,6 +18,7 @@ class AuthController {
     this.resendEmailVerification = resendEmailVerification;
     this.verifyEmail = verifyEmail;
     this.notificationService = notificationService;
+    this.authCookies = authCookies;
     this.logger = logger;
   }
 
@@ -35,16 +37,24 @@ class AuthController {
     const input = LoginRequest.fromRequest(req.body);
     const result = await this.loginUser.execute({ ...input, sourceIp: req.ip });
     const session = await this.sessionService.create(result.userId, this.meta(req));
+    setSessionCookies(res, session, this.authCookies);
     res.json({ data: AuthResponse.fromSession(session) });
   }
 
   async refresh(req, res) {
-    const session = await this.sessionService.refresh(req.body?.refreshToken, this.meta(req));
+    const refreshToken = getCookie(req, this.authCookies.refreshTokenName);
+    const session = await this.sessionService.refresh(refreshToken, this.meta(req));
+    setSessionCookies(res, session, this.authCookies);
     res.json({ data: AuthResponse.fromSession(session) });
   }
 
   async logout(req, res) {
-    await this.sessionService.revoke({ refreshToken: req.body?.refreshToken, userId: req.user.id, sessionId: req.user.sessionId });
+    const refreshToken = getCookie(req, this.authCookies.refreshTokenName);
+    try {
+      await this.sessionService.revoke({ refreshToken, userId: req.user.id, sessionId: req.user.sessionId });
+    } finally {
+      clearSessionCookies(res, this.authCookies);
+    }
     res.status(204).send();
   }
 
