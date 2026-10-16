@@ -1,0 +1,318 @@
+openapi: 3.1.0
+info:
+  title: HidroSmart API
+  version: 1.0.0
+  description: |
+    Catálogo de rutas y autenticación del backend montado en src/app.js.
+    Este primer contrato documenta rutas y seguridad; los cuerpos, parámetros
+    de consulta y esquemas de respuesta completos siguen definidos por rutas,
+    controladores, DTO y pruebas. Actualizar este archivo cuando cambie alguno.
+servers:
+  - url: http://localhost:3000
+    description: Desarrollo local
+security:
+  - accessCookie: []
+  - bearerAuth: []
+x-csrf-protection:
+  applies-when: Una petición mutante usa cookies de sesión de acceso o refresh.
+  header: X-CSRF-Token
+  cookie: hidrosmart_csrf
+  note: El nombre del header y de las cookies es configurable; con Bearer sin cookie de sesión no se exige CSRF.
+tags:
+  - { name: Health }
+  - { name: Auth }
+  - { name: Users }
+  - { name: Homes }
+  - { name: Devices }
+  - { name: Consumption }
+  - { name: Alerts }
+  - { name: Goals }
+  - { name: Vacation }
+  - { name: Roles }
+  - { name: Support }
+  - { name: Audit }
+  - { name: Privacy }
+  - { name: Reports }
+  - { name: Recommendations }
+  - { name: Actuators }
+  - { name: Tariffs }
+paths:
+  /:
+    get: { tags: [Health], summary: Información básica de la API, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /health:
+    get: { tags: [Health], summary: Estado general del servicio, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /health/live:
+    get: { tags: [Health], summary: Liveness del proceso, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /health/ready:
+    get: { tags: [Health], summary: Readiness de dependencias, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+
+  /api/v1/auth/register:
+    post: { tags: [Auth], summary: Registrar cuenta, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /api/v1/auth/login:
+    post: { tags: [Auth], summary: Iniciar sesión y establecer cookies, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /api/v1/auth/refresh:
+    post: { tags: [Auth], summary: Renovar sesión, responses: { default: { $ref: '#/components/responses/Default' } }, security: [{ refreshCookie: [] }] }
+  /api/v1/auth/logout:
+    post: { tags: [Auth], summary: Cerrar sesión y revocar refresh, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/auth/sessions:
+    get: { tags: [Auth], summary: Listar sesiones propias, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/auth/sessions/{sessionId}:
+    parameters: [{ name: sessionId, in: path, required: true, schema: { type: string } }]
+    delete: { tags: [Auth], summary: Revocar sesión propia, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/auth/sessions/revoke-others:
+    post: { tags: [Auth], summary: Revocar otras sesiones, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/auth/sessions/revoke-all:
+    post: { tags: [Auth], summary: Revocar todas las sesiones, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/auth/change-password:
+    post: { tags: [Auth], summary: Cambiar contraseña autenticado, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/auth/request-password-reset:
+    post: { tags: [Auth], summary: Solicitar recuperación de contraseña, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /api/v1/auth/password-reset-context:
+    get: { tags: [Auth], summary: Consultar contexto del token de recuperación, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /api/v1/auth/resend-verification:
+    post: { tags: [Auth], summary: Reenviar verificación de correo, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /api/v1/auth/verify-email:
+    post: { tags: [Auth], summary: Verificar correo, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+  /api/v1/auth/reset-password:
+    post: { tags: [Auth], summary: Restablecer contraseña con token, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
+
+  /api/v1/users:
+    get: { tags: [Users], summary: Listar usuarios administrables, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/users/me:
+    get: { tags: [Users], summary: Consultar perfil y permisos propios, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Users], summary: Actualizar perfil propio, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/users/me/preferences:
+    get: { tags: [Users], summary: Consultar preferencias propias, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Users], summary: Actualizar preferencias propias, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/users/me/notifications:
+    get: { tags: [Users], summary: Consultar preferencias de notificación, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Users], summary: Actualizar preferencias de notificación, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/users/{userId}/overview:
+    parameters: [{ name: userId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Users], summary: Consultar resumen administrativo del usuario, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/users/{userId}/status:
+    parameters: [{ name: userId, in: path, required: true, schema: { type: string } }]
+    patch: { tags: [Users], summary: Cambiar estado de cuenta, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/users/{userId}:
+    parameters: [{ name: userId, in: path, required: true, schema: { type: string } }]
+    delete: { tags: [Users], summary: Eliminar lógicamente una cuenta, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/homes:
+    get: { tags: [Homes], summary: Listar hogares accesibles, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Homes], summary: Crear hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/homes/{homeId}:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Homes], summary: Consultar hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Homes], summary: Actualizar hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/homes/{homeId}/members:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Homes], summary: Listar miembros del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Homes], summary: Agregar miembro al hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/homes/{homeId}/members/{memberUserId}/role:
+    parameters:
+      - { name: homeId, in: path, required: true, schema: { type: string } }
+      - { name: memberUserId, in: path, required: true, schema: { type: string } }
+    patch: { tags: [Homes], summary: Cambiar rol de miembro, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/homes/{homeId}/members/{memberUserId}:
+    parameters:
+      - { name: homeId, in: path, required: true, schema: { type: string } }
+      - { name: memberUserId, in: path, required: true, schema: { type: string } }
+    delete: { tags: [Homes], summary: Retirar miembro del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/homes/{homeId}/membership-requests:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Homes], summary: Listar solicitudes de membresía del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Homes], summary: Solicitar membresía al hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/homes/membership-requests/{requestId}:
+    parameters: [{ name: requestId, in: path, required: true, schema: { type: string } }]
+    patch: { tags: [Homes], summary: Aprobar o rechazar solicitud de membresía, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/devices:
+    get: { tags: [Devices], summary: Listar dispositivos accesibles, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Devices], summary: Registrar dispositivo lógico, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/link:
+    post: { tags: [Devices], summary: Vincular código de dispositivo a hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/hardware/{hardwareId}:
+    parameters: [{ name: hardwareId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Devices], summary: Consultar dispositivo por hardwareId autorizado, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Devices], summary: Consultar dispositivo, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Devices], summary: Actualizar dispositivo, responses: { default: { $ref: '#/components/responses/Default' } } }
+    delete: { tags: [Devices], summary: Eliminar dispositivo ya desvinculado, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/status:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Devices], summary: Consultar estado del dispositivo, responses: { default: { $ref: '#/components/responses/Default' } } }
+    patch: { tags: [Devices], summary: Actualizar estado administrativo, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/telemetry:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Devices], summary: Listar telemetría del dispositivo, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/telemetry/latest:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Devices], summary: Consultar telemetría más reciente, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/config:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    put: { tags: [Devices], summary: Actualizar configuración del dispositivo, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/provisioning:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    patch: { tags: [Devices], summary: Actualizar estado de aprovisionamiento, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/claim-hardware:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    post: { tags: [Devices], summary: Reclamar hardware físico, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/deactivate:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    post: { tags: [Devices], summary: Desactivar dispositivo, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/devices/{deviceId}/home/{homeId}:
+    parameters:
+      - { name: deviceId, in: path, required: true, schema: { type: string } }
+      - { name: homeId, in: path, required: true, schema: { type: string } }
+    delete: { tags: [Devices], summary: Desvincular dispositivo del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/consumption/budget-status:
+    get: { tags: [Consumption], summary: Consultar estado de presupuesto, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/consumption/summary:
+    get: { tags: [Consumption], summary: Consultar resumen de consumo, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/consumption/daily:
+    get: { tags: [Consumption], summary: Consultar serie diaria, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/consumption/monthly:
+    get: { tags: [Consumption], summary: Consultar serie mensual, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/consumption/hourly:
+    get: { tags: [Consumption], summary: Consultar serie horaria, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/consumption/cost:
+    get: { tags: [Consumption], summary: Consultar costo del período, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/consumption/advanced:
+    get: { tags: [Consumption], summary: Consultar serie avanzada, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/alerts/home/{homeId}/pending:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Alerts], summary: Listar alertas pendientes del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/alerts/{alertId}/status:
+    parameters: [{ name: alertId, in: path, required: true, schema: { type: string } }]
+    patch: { tags: [Alerts], summary: Actualizar estado de alerta, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/alerts/home/{homeId}/rules:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Alerts], summary: Listar reglas de alertas, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Alerts], summary: Crear regla de alerta, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/alerts/home/{homeId}/history:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Alerts], summary: Consultar historial de alertas, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/alerts/rules/{ruleId}:
+    parameters: [{ name: ruleId, in: path, required: true, schema: { type: string } }]
+    patch: { tags: [Alerts], summary: Actualizar regla de alerta, responses: { default: { $ref: '#/components/responses/Default' } } }
+    delete: { tags: [Alerts], summary: Eliminar regla de alerta, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/alerts/home/{homeId}/thresholds:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Alerts], summary: Consultar umbrales del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Alerts], summary: Guardar umbrales del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+    delete: { tags: [Alerts], summary: Eliminar umbrales del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/goals:
+    get: { tags: [Goals], summary: Listar metas del hogar activo, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Goals], summary: Crear meta, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/goals/{goalId}:
+    parameters: [{ name: goalId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Goals], summary: Consultar meta, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Goals], summary: Actualizar meta, responses: { default: { $ref: '#/components/responses/Default' } } }
+    delete: { tags: [Goals], summary: Eliminar meta, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/goals/{goalId}/progress:
+    parameters: [{ name: goalId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Goals], summary: Consultar progreso de meta, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/vacation/home/{homeId}:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Vacation], summary: Consultar modo vacaciones, responses: { default: { $ref: '#/components/responses/Default' } } }
+    put: { tags: [Vacation], summary: Guardar modo vacaciones, responses: { default: { $ref: '#/components/responses/Default' } } }
+    delete: { tags: [Vacation], summary: Eliminar modo vacaciones, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/roles/users/{userId}:
+    parameters: [{ name: userId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Roles], summary: Listar roles del usuario, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Roles], summary: Asignar rol al usuario, responses: { default: { $ref: '#/components/responses/Default' } } }
+    delete: { tags: [Roles], summary: Retirar rol del usuario, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/support/catalogs:
+    get: { tags: [Support], summary: Consultar catálogos de soporte, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/support/tickets:
+    get: { tags: [Support], summary: Listar tickets visibles al usuario, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Support], summary: Crear ticket, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/support/tickets/{ticketId}:
+    parameters: [{ name: ticketId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Support], summary: Consultar ticket, responses: { default: { $ref: '#/components/responses/Default' } } }
+    patch: { tags: [Support], summary: Gestionar estado del ticket, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/support/tickets/{ticketId}/responses:
+    parameters: [{ name: ticketId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Support], summary: Listar respuestas del ticket, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Support], summary: Responder ticket, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/audit/logs:
+    get: { tags: [Audit], summary: Consultar auditoría paginada, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/privacy/export:
+    get: { tags: [Privacy], summary: Exportar datos personales propios, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/privacy/consents:
+    get: { tags: [Privacy], summary: Consultar consentimientos, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Privacy], summary: Registrar consentimiento, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/privacy/requests:
+    get: { tags: [Privacy], summary: Listar solicitudes ARCO propias, responses: { default: { $ref: '#/components/responses/Default' } } }
+    post: { tags: [Privacy], summary: Crear solicitud ARCO, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/privacy/requests/manage:
+    get: { tags: [Privacy], summary: Listar solicitudes ARCO administrables, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/privacy/requests/{requestId}:
+    parameters: [{ name: requestId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Privacy], summary: Consultar solicitud ARCO propia, responses: { default: { $ref: '#/components/responses/Default' } } }
+    patch: { tags: [Privacy], summary: Actualizar solicitud ARCO, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/reports/history:
+    get: { tags: [Reports], summary: Consultar historial de reportes, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/reports/{reportId}/download:
+    parameters: [{ name: reportId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Reports], summary: Descargar reporte generado, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/reports/consumption.pdf:
+    get: { tags: [Reports], summary: Generar reporte de consumo PDF, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/reports/consumption.xlsx:
+    get: { tags: [Reports], summary: Generar reporte de consumo XLSX, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/recommendations:
+    get: { tags: [Recommendations], summary: Listar recomendaciones, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/recommendations/home/{homeId}/summary:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Recommendations], summary: Consultar resumen de recomendaciones, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/recommendations/{userRecommendationId}:
+    parameters: [{ name: userRecommendationId, in: path, required: true, schema: { type: string } }]
+    patch: { tags: [Recommendations], summary: Actualizar recomendación asignada, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/actuators/states:
+    get: { tags: [Actuators], summary: Consultar estados de actuadores, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/actuators/commands:
+    get: { tags: [Actuators], summary: Listar comandos de actuadores, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/actuators/{deviceId}/{actuator}/commands:
+    parameters:
+      - { name: deviceId, in: path, required: true, schema: { type: string } }
+      - { name: actuator, in: path, required: true, schema: { type: string } }
+    post: { tags: [Actuators], summary: Enviar comando de actuador, responses: { default: { $ref: '#/components/responses/Default' } } }
+  /api/v1/actuators/{deviceId}/status:
+    parameters: [{ name: deviceId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Actuators], summary: Consultar estado de actuadores del dispositivo, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+  /api/v1/tariffs/home/{homeId}:
+    parameters: [{ name: homeId, in: path, required: true, schema: { type: string } }]
+    get: { tags: [Tariffs], summary: Consultar tarifa vigente del hogar, responses: { default: { $ref: '#/components/responses/Default' } } }
+
+components:
+  responses:
+    Default:
+      description: Respuesta del endpoint; consultar controlador/DTO para los códigos y el esquema concretos.
+  securitySchemes:
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: hidrosmart_access
+      description: Nombre configurable con AUTH_ACCESS_COOKIE_NAME.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: hidrosmart_refresh
+      description: Cookie de renovación; nombre configurable con AUTH_REFRESH_COOKIE_NAME.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
