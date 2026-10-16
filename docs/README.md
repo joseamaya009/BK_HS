@@ -22,7 +22,10 @@ son la fuente de verdad de la API y persistencia respectivamente.
 - [03_domain: entidades y reglas centrales](03_domain.md)
 - [04_infrastructure: PostgreSQL, correo, seguridad y MQTT](04_infrastructure.md)
 - [05_runtime-tests: arranque, jobs, MQTT y pruebas](05_runtime-tests.md)
+- [06_mqtt-y-procesos-asincronos: tópicos y tareas periódicas](06_mqtt-y-procesos-asincronos.md)
+- [07_autorizacion-y-permisos: permisos, roles y RLS](07_autorizacion-y-permisos.md)
 - [Resumen del contrato HTTP](api.md)
+- [Contrato OpenAPI: rutas y seguridad](openapi.yaml)
 
 ## Autenticación y autorización
 
@@ -37,7 +40,7 @@ son la fuente de verdad de la API y persistencia respectivamente.
 El backend se suscribe a telemetría, estado de dispositivo y estado de
 actuadores. Valida mensajes, deduplica `mqttMessageId`, persiste lecturas y
 publica comandos de vínculo o desvínculo. El contrato del ESP32 está en
-[../../firmware/mqtt/contract.md](../../firmware/mqtt/contract.md).
+[contrato del firmware ESP32](https://github.com/joseale879/PT_HS/blob/hu-15-dev/firmware/mqtt/contract.md).
 
 `MQTT_ALLOW_LEGACY_TELEMETRY` debe permanecer en `false` para firmware actual.
 Solo actívalo temporalmente si se está migrando una placa antigua sin
@@ -58,4 +61,4 @@ npm.cmd run test:integration
 ```
 
 La integración requiere la pila local y variables `INTEGRATION_*`; consulta
-[../../docs/pruebas.md](../../docs/pruebas.md).
+[guía general de pruebas](https://github.com/joseale879/PT_HS/blob/hu-15-dev/docs/pruebas.md).

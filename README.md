@@ -5,14 +5,14 @@ dispositivos, consumo, MQTT, reportes y comunicación con PostgreSQL.
 
 ## Ejecución
 
-La forma recomendada es levantar la pila desde la raíz del repositorio; consulta
-[../docs/operacion-local.md](../docs/operacion-local.md).
+Este repositorio contiene su propio `docker-compose.yml` y plantilla
+`.env.example` para preparar el entorno local. Ejecuta los comandos desde la
+raíz de este repositorio.
 
 Para ejecutar solo el backend se necesita PostgreSQL y Mosquitto accesibles
-desde Windows y un archivo `BK_HS/.env` basado en `.env.example`:
+desde Windows y un archivo `.env` basado en `.env.example`:
 
 ```powershell
-Set-Location BK_HS
 npm.cmd install
 npm.cmd run check
 npm.cmd test
@@ -36,5 +36,5 @@ La API local escucha en `http://localhost:3000` y expone salud en `/health`.
 
 - [Arquitectura y operación del backend](docs/README.md)
 - [Resumen de API](docs/api.md)
-- [Arquitectura general](../docs/arquitectura.md)
-- [Flujo IoT](../docs/iot.md)
+- [Arquitectura general](https://github.com/joseale879/PT_HS/blob/hu-15-dev/docs/arquitectura.md)
+- [Flujo IoT](https://github.com/joseale879/PT_HS/blob/hu-15-dev/docs/iot.md)
