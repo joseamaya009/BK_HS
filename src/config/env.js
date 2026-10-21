@@ -32,6 +32,81 @@ function getDurationMs(value, name) {
   return Number(match[1]) * factors[match[2].toLowerCase()];
 }
 
+function getIngestDatabaseUrl(databaseUrl, username, password) {
+  if (!databaseUrl || !username || !password) return undefined;
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(databaseUrl);
+  } catch (_error) {
+    throw new Error('DATABASE_URL debe ser una URL PostgreSQL válida para separar las credenciales de ingesta');
+  }
+
+  if (!['postgres:', 'postgresql:'].includes(parsedUrl.protocol)) {
+    throw new Error('DATABASE_URL debe usar el protocolo postgres:// o postgresql://');
+  }
+
+  parsedUrl.username = username;
+  parsedUrl.password = password;
+  return parsedUrl.toString();
+}
+
+function getDatabaseUrlSsl(databaseUrl) {
+  if (!databaseUrl) return undefined;
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(databaseUrl);
+  } catch (_error) {
+    return false;
+  }
+
+  const sslMode = parsedUrl.searchParams.get('sslmode')?.toLowerCase();
+  if (sslMode) return sslMode === 'verify-full';
+
+  const ssl = parsedUrl.searchParams.get('ssl')?.toLowerCase();
+  if (ssl) return ['true', '1'].includes(ssl);
+
+  if (parsedUrl.searchParams.has('sslrootcert') || parsedUrl.searchParams.has('sslcert')) return true;
+  return undefined;
+}
+
+function getDatabaseConfig(env = process.env) {
+  if (Boolean(env.DB_INGEST_USER) !== Boolean(env.DB_INGEST_PASSWORD)) {
+    throw new Error('DB_INGEST_USER y DB_INGEST_PASSWORD deben configurarse juntos');
+  }
+
+  const ssl = getBoolean(env.DB_SSL, undefined, 'DB_SSL');
+  const urlSsl = env.NODE_ENV === 'production' ? getDatabaseUrlSsl(env.DATABASE_URL) : undefined;
+  if (env.NODE_ENV === 'production' && (ssl === false || urlSsl === false)) {
+    throw new Error('En producción PostgreSQL debe usar TLS con validación de certificado; no uses DB_SSL=false ni sslmode=disable/no-verify');
+  }
+  if (env.NODE_ENV === 'production' && ssl !== true && urlSsl !== true) {
+    throw new Error('En producción configura DB_SSL=true o un DATABASE_URL con TLS habilitado');
+  }
+
+  const ingestUser = env.DB_INGEST_USER || env.DB_USER;
+  const ingestPassword = env.DB_INGEST_PASSWORD || env.DB_PASSWORD;
+  const ingestDatabaseUrl = getIngestDatabaseUrl(env.DATABASE_URL, ingestUser, ingestPassword);
+
+  return {
+    ...(env.DATABASE_URL ? { connectionString: env.DATABASE_URL } : {}),
+    ...(ssl === undefined ? {} : { ssl }),
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+    max: Number(env.DB_POOL_MAX || 10),
+    ingest: {
+      ...(ingestDatabaseUrl ? { connectionString: ingestDatabaseUrl } : {}),
+      user: ingestUser,
+      password: ingestPassword,
+      max: Number(env.DB_INGEST_POOL_MAX || env.DB_POOL_MAX || 5)
+    }
+  };
+}
+
 function getEnv() {
   const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
   const missing = required.filter((key) => key !== 'DB_HOST' && key !== 'DB_PORT' && key !== 'DB_NAME' && key !== 'DB_USER' && key !== 'DB_PASSWORD' && !process.env[key]);
@@ -48,7 +123,6 @@ function getEnv() {
   if (cookieSameSite === 'none' && !cookieSecure) {
     throw new Error('AUTH_COOKIE_SECURE debe ser true cuando AUTH_COOKIE_SAME_SITE=none');
   }
-
   return {
     nodeEnv,
     port: Number(process.env.PORT || 3000),
@@ -83,20 +157,7 @@ function getEnv() {
       domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
       refreshMaxAgeMs: getDurationMs(process.env.JWT_REFRESH_EXPIRES_IN || '30d', 'JWT_REFRESH_EXPIRES_IN')
     },
-    db: {
-      ...(hasDatabaseUrl ? { connectionString: process.env.DATABASE_URL } : {}),
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      max: Number(process.env.DB_POOL_MAX || 10),
-      ingest: {
-        user: process.env.DB_INGEST_USER || process.env.DB_USER,
-        password: process.env.DB_INGEST_PASSWORD || process.env.DB_PASSWORD,
-        max: Number(process.env.DB_INGEST_POOL_MAX || process.env.DB_POOL_MAX || 5)
-      }
-    },
+    db: getDatabaseConfig(process.env),
     jwt: {
       secret: process.env.JWT_SECRET,
       expiresIn: process.env.JWT_EXPIRES_IN || '15m',
@@ -107,4 +168,4 @@ function getEnv() {
   };
 }
 
-module.exports = { getEnv };
+module.exports = { getEnv, getDatabaseConfig, getIngestDatabaseUrl, getDatabaseUrlSsl };
