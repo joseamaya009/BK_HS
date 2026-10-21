@@ -332,6 +332,65 @@ test('rechaza telemetría inválida y deviceId falsificado', async () => {
   );
 });
 
+test('los logs MQTT omiten identidad, telemetría y datos de red del dispositivo', async () => {
+  const logged = [];
+  const logger = {
+    info: (...args) => logged.push(args),
+    warn: (...args) => logged.push(args),
+    error: (...args) => logged.push(args)
+  };
+  const deviceCode = 'ESP32-PRIVATE-001';
+  const wifiSsid = 'CasaWifiPrivada';
+  const lastIp = '192.168.44.22';
+  const hardwareId = 'HS-PRIVATE-HARDWARE';
+  const messageId = 'mqtt-private-message-123';
+  const correlationId = '550e8400-e29b-41d4-a716-446655440000';
+
+  await handleReading({
+    topic: telemetryTopic(deviceCode),
+    message: JSON.stringify({
+      mqttMessageId: messageId,
+      deviceId: deviceCode,
+      hardwareId,
+      flowRateLpm: 2.4,
+      consumptionLiters: 4.5,
+      totalLiters: 10,
+      pulses: 8,
+      timestamp: '2026-09-04T12:00:00Z'
+    }),
+    logger,
+    readingRepository: { ingestTelemetry: async () => ({ inserted: true, duplicate: false, homeId: 'home-private-id' }) }
+  });
+  await handleDeviceStatus({
+    topic: `hidrosmart/devices/${deviceCode}/status`,
+    message: JSON.stringify({
+      deviceId: deviceCode,
+      hardwareId,
+      status: 'ONLINE',
+      wifiSsid,
+      lastIp,
+      provisioningState: 'complete'
+    }),
+    logger,
+    deviceRepository: { recordMqttStatus: async () => ({ linked_to_home: true }) }
+  });
+  await handleActuatorStatus({
+    topic: `hidrosmart/devices/${deviceCode}/actuators/valve/status`,
+    message: JSON.stringify({
+      actuator: 'VALVE',
+      status: 'OPEN',
+      correlationId,
+      timestamp: '2026-09-14T12:00:00Z'
+    }),
+    logger
+  });
+
+  const logText = JSON.stringify(logged);
+  for (const value of [deviceCode, wifiSsid, lastIp, hardwareId, messageId, correlationId, 'home-private-id', '4.5']) {
+    assert.equal(logText.includes(value), false, `log must omit ${value}`);
+  }
+});
+
 test('subscriber enruta telemetría, estados y confirmaciones de actuador', async () => {
   class FakeClient extends EventEmitter {
     constructor() {
@@ -377,6 +436,7 @@ test('subscriber enruta telemetría, estados y confirmaciones de actuador', asyn
 
 test('publisher serializa los comandos y usa QoS 1 por defecto', async () => {
   const sent = [];
+  const logged = [];
   const publisher = new MqttPublisher({
     mqttClient: {
       connect: () => ({
@@ -386,7 +446,7 @@ test('publisher serializa los comandos y usa QoS 1 por defecto', async () => {
         }
       })
     },
-    logger: silentLogger
+    logger: { info: (...args) => logged.push(args) }
   });
 
   await publisher.publish('hidrosmart/devices/ESP32-001/actuators/valve/command', { command: 'OPEN' });
@@ -395,4 +455,5 @@ test('publisher serializa los comandos y usa QoS 1 por defecto', async () => {
     message: '{"command":"OPEN"}',
     options: { qos: 1, retain: false }
   }]);
+  assert.deepEqual(logged, [['[MQTT] Mensaje publicado']]);
 });
