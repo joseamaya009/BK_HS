@@ -17,13 +17,23 @@ frontend React/Vite ── HTTPS ─┘
 El broker **no está desplegado**. `docker/mosquitto/mosquitto.conf` y el
 servicio `mosquitto` de `docker-compose.yml` son para desarrollo local: usan
 TCP sin TLS, permiten conexiones anónimas y no tienen un volumen Docker para
-conservar los datos del broker al recrear el contenedor. No publiques esa
+conservar los datos del broker al recrear el contenedor; el servicio tampoco
+tiene health check propio. No publiques esa
 configuración como servicio de producción.
 
 El backend continúa levantando la API cuando el broker no responde, siempre
 que `MQTT_BROKER_URL` esté configurada. El cliente MQTT reintenta la conexión;
 `GET /health/ready` devuelve 503 mientras falte la conexión/suscripción MQTT o
 la base de datos. `GET /health/live` solo informa si el proceso HTTP sigue vivo.
+Los logs registran estado y resultado de ingesta, no payloads, SSID, IP, IDs de
+dispositivo ni topics concretos.
+
+El cliente usa `clean: true`: al estar desconectado no conserva una sesión MQTT
+con cola de telemetría para recibir mensajes publicados durante la caída. Al
+reconectar vuelve a suscribirse. Si el requisito es no perder lecturas durante
+una interrupción, hay que acordar y probar sesiones persistentes, identificador
+de cliente estable y cola QoS del broker antes de considerar la disponibilidad
+resuelta.
 
 ## Decisión de despliegue
 
