@@ -33,7 +33,10 @@ async function handleActuatorStatus({ topic, message, context, logger = console,
     });
   }
 
-  logger.info('[MQTT] Estado de actuador recibido', status);
+  logger.info('[MQTT] Estado de actuador recibido', {
+    actuator: status.actuator,
+    status: status.status
+  });
   return status;
 }
 
