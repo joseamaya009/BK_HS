@@ -146,8 +146,8 @@ publicación de comandos con un ESP32 de prueba.
 Promueve esta rama mediante revisión: `feature/mqtt-production-setup` a
 `develop`, valida el entorno de desarrollo, luego promueve secuencialmente a
 `qa`, `staging` y `main`. En cada paso conserva la validación y protección de la
-rama destino. No se hicieron push, pull requests, merges ni despliegues como
-parte de esta preparación local.
+rama destino. El estado de publicación se confirma en el historial de PR del
+repositorio; esta guía no acredita un despliegue ni validación en producción.
 
 ## Pendientes para declarar producción
 
