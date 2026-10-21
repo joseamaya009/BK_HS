@@ -1,6 +1,11 @@
 const mqtt = require('mqtt');
 const { getMqttConfig } = require('../../../../config/mqtt');
 
+function getBrokerAddressForLog(brokerUrl) {
+  const { protocol, host } = new URL(brokerUrl);
+  return `${protocol}//${host}`;
+}
+
 class MqttClient {
   constructor({ mqttModule = mqtt, configFactory = getMqttConfig, logger = console } = {}) {
     this.mqttModule = mqttModule;
@@ -13,7 +18,7 @@ class MqttClient {
     if (this.client) return this.client;
 
     const config = this.configFactory();
-    this.logger.info(`[MQTT] Conectando al broker: ${config.brokerUrl}`);
+    this.logger.info(`[MQTT] Conectando al broker: ${getBrokerAddressForLog(config.brokerUrl)}`);
     this.client = this.mqttModule.connect(config.brokerUrl, config.options);
 
     this.client.on('connect', () => this.logger.info('[MQTT] Broker conectado correctamente'));
@@ -38,4 +43,4 @@ class MqttClient {
   }
 }
 
-module.exports = { MqttClient };
+module.exports = { MqttClient, getBrokerAddressForLog };

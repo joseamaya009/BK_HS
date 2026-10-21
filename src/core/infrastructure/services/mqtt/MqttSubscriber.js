@@ -85,7 +85,7 @@ class MqttSubscriber {
     const handler = context ? this.handlers[context.type] : null;
 
     if (!handler) {
-      this.logger.warn(`[MQTT] Topic no manejado: ${topic}`);
+      this.logger.warn('[MQTT] Topic no manejado');
       return;
     }
 
@@ -104,7 +104,7 @@ class MqttSubscriber {
         allowLegacyTelemetry: this.allowLegacyTelemetry,
       });
     } catch (error) {
-      this.logger.error(`[MQTT] Mensaje rechazado en ${topic}:`, error.message);
+      this.logger.error('[MQTT] Mensaje MQTT rechazado:', error.message);
     }
   }
 
