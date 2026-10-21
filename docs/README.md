@@ -43,6 +43,9 @@ publica comandos de vínculo o desvínculo. El contrato del ESP32 está en
 Solo actívalo temporalmente si se está migrando una placa antigua sin
 `mqttMessageId`.
 
+Para la decisión de broker, las variables de producción y los pasos pendientes,
+consulta [Preparación MQTT para producción](mqtt-production.md).
+
 ## Variables importantes
 
 Usa `.env.example` como referencia. Las variables mínimas son `DB_*`,
