@@ -62,7 +62,7 @@ function getDatabaseUrlSsl(databaseUrl) {
   }
 
   const sslMode = parsedUrl.searchParams.get('sslmode')?.toLowerCase();
-  if (sslMode) return ['require', 'verify-ca', 'verify-full'].includes(sslMode);
+  if (sslMode) return sslMode === 'verify-full';
 
   const ssl = parsedUrl.searchParams.get('ssl')?.toLowerCase();
   if (ssl) return ['true', '1'].includes(ssl);

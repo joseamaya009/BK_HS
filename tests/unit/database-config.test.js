@@ -62,4 +62,13 @@ test('la conexión PostgreSQL productiva requiere TLS validado', () => {
     DATABASE_URL: 'postgresql://app-role:app-test-secret@db.example:5432/hidro_smart?sslmode=verify-full'
   });
   assert.equal(urlConfig.connectionString.includes('sslmode=verify-full'), true);
+  for (const sslmode of ['require', 'verify-ca']) {
+    assert.throws(
+      () => getDatabaseConfig({
+        NODE_ENV: 'production',
+        DATABASE_URL: `postgresql://app-role:app-test-secret@db.example:5432/hidro_smart?sslmode=${sslmode}`
+      }),
+      /debe usar TLS/
+    );
+  }
 });

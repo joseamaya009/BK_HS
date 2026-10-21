@@ -121,8 +121,10 @@ requiere una migración nueva para la ruta actual del backend.
 En Render configura el endpoint PostgreSQL de Supabase y el modo TLS exigido
 por Supabase. Si usas `DB_HOST`/`DB_PORT`, configura `DB_SSL=true`. Si usas
 `DATABASE_URL`, incluye el parámetro TLS proporcionado por Supabase; se
-recomienda `sslmode=verify-full`. En producción el backend rechaza TLS
-desactivado y el modo `no-verify`.
+recomienda y se exige `sslmode=verify-full` para validar la cadena y el nombre
+del servidor. En producción el backend rechaza `sslmode=require`, `verify-ca`,
+`no-verify` y TLS desactivado. También puede usarse `ssl=true`, cuya
+validación TLS depende de las opciones estándar de Node.js.
 
 Si se usa `DATABASE_URL` con un usuario de aplicación y también se configuran
 `DB_INGEST_USER` y `DB_INGEST_PASSWORD`, el backend deriva la URL del pool de
