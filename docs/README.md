@@ -23,6 +23,7 @@ son la fuente de verdad de la API y persistencia respectivamente.
 - [04_infrastructure: PostgreSQL, correo, seguridad y MQTT](04_infrastructure.md)
 - [05_runtime-tests: arranque, jobs, MQTT y pruebas](05_runtime-tests.md)
 - [Resumen del contrato HTTP](api.md)
+- [Operación local del conjunto](operacion-local.md)
 
 ## Autenticación y autorización
 
@@ -49,7 +50,8 @@ consulta [Preparación MQTT para producción](mqtt-production.md).
 ## Variables importantes
 
 Usa `.env.example` como referencia. Las variables mínimas son `DB_*`,
-`DB_INGEST_*`, `JWT_*`, `CORS_ORIGIN`, `MQTT_BROKER_URL` y `MQTT_DEVICE_HOST`.
+`DB_INGEST_*`, `JWT_*`, `CORS_ORIGIN`, `MQTT_BROKER_URL`, `MQTT_USERNAME` y
+`MQTT_PASSWORD`.
 No documentes ni confirmes valores reales de `.env`.
 
 ## Verificación
@@ -61,4 +63,4 @@ npm.cmd run test:integration
 ```
 
 La integración requiere la pila local y variables `INTEGRATION_*`; consulta
-[../../docs/pruebas.md](../../docs/pruebas.md).
+[05_runtime-tests.md](05_runtime-tests.md).
