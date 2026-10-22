@@ -1,9 +1,29 @@
 const { Pool } = require('pg');
 const { getEnv } = require('../config/env');
 
+const fs = require('fs');
+
 const config = getEnv();
-const pool = new Pool(config.db);
-const ingestPool = new Pool({ ...config.db, ...config.db.ingest });
+
+const sslConfig = process.env.DB_SSL_CA
+  ? {
+      ca: fs.readFileSync(process.env.DB_SSL_CA, 'utf8'),
+      rejectUnauthorized: true
+    }
+  : config.db.ssl;
+
+const dbConfig = {
+  ...config.db,
+  ...(sslConfig ? { ssl: sslConfig } : {})
+};
+
+const pool = new Pool(dbConfig);
+
+const ingestPool = new Pool({
+  ...dbConfig,
+  ...config.db.ingest,
+  ...(sslConfig ? { ssl: sslConfig } : {})
+});
 
 pool.on('error', (error) => {
   console.error('Error inesperado del pool PostgreSQL:', error.message);
