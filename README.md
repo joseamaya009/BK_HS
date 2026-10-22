@@ -5,8 +5,8 @@ dispositivos, consumo, MQTT, reportes y comunicación con PostgreSQL.
 
 ## Ejecución
 
-La forma recomendada es levantar la pila desde la raíz del repositorio; consulta
-[../docs/operacion-local.md](../docs/operacion-local.md).
+La forma recomendada es levantar la pila desde la raíz del conjunto local;
+consulta [docs/operacion-local.md](docs/operacion-local.md).
 
 Para ejecutar solo el backend se necesita PostgreSQL y Mosquitto accesibles
 desde Windows y un archivo `BK_HS/.env` basado en `.env.example`:
@@ -20,6 +20,8 @@ npm.cmd run dev
 ```
 
 La API local escucha en `http://localhost:3000` y expone salud en `/health`.
+La preparación de PostgreSQL y Liquibase se realiza con
+`BD_HS/scripts/start-local.ps1` antes de levantar el backend.
 
 ## Scripts
 
