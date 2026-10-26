@@ -34,7 +34,8 @@ app.use(requestContext);
 app.use(cors({
   origin: env.corsOrigin.split(',').map((origin) => origin.trim()),
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', env.authCookies.csrfHeaderName]
+  allowedHeaders: ['Content-Type', 'Authorization', env.authCookies.csrfHeaderName],
+  exposedHeaders: [env.authCookies.csrfHeaderName]
 }));
 // Permite transportar un avatar de hasta 2 MB en base64; el caso de uso
 // comprueba el tamaño binario real antes de persistirlo.
