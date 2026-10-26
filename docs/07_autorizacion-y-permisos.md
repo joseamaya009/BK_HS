@@ -63,4 +63,4 @@ La matriz exacta de cada router está en `src/api/*.routes.js`. Al cambiar un pe
 - Petición mutable con cookie sin CSRF → rechazo.
 - Cambiar `homeId` en una petición no debe revelar datos de otro hogar.
 
-Para políticas y privilegios PostgreSQL consulta [la guía DCL de la base de datos](https://github.com/EmersonMolano/BD_HS/blob/hu-21-dev/docs/03_dcl.md) y [la guía de RLS y seguridad](https://github.com/EmersonMolano/BD_HS/blob/hu-21-dev/docs/07_rls-y-seguridad.md).
+Para políticas y privilegios PostgreSQL consulta [../../BD_HS/docs/03_dcl.md](../../BD_HS/docs/03_dcl.md) y [../../BD_HS/docs/07_rls-y-seguridad.md](../../BD_HS/docs/07_rls-y-seguridad.md).
