@@ -37,24 +37,34 @@ class AuthController {
     const input = LoginRequest.fromRequest(req.body);
     const result = await this.loginUser.execute({ ...input, sourceIp: req.ip });
     const session = await this.sessionService.create(result.userId, this.meta(req));
-    setSessionCookies(res, session, this.authCookies);
+    setSessionCookies(
+      res,
+      session,
+      this.authCookies,
+      getCookie(req, this.authCookies.csrfTokenName)
+    );
     res.json({ data: AuthResponse.fromSession(session) });
   }
 
   async refresh(req, res) {
     const refreshToken = getCookie(req, this.authCookies.refreshTokenName);
     const session = await this.sessionService.refresh(refreshToken, this.meta(req));
-    setSessionCookies(res, session, this.authCookies);
+    setSessionCookies(
+      res,
+      session,
+      this.authCookies,
+      getCookie(req, this.authCookies.csrfTokenName)
+    );
     res.json({ data: AuthResponse.fromSession(session) });
   }
 
   async logout(req, res) {
-    const refreshToken = getCookie(req, this.authCookies.refreshTokenName);
     try {
-      await this.sessionService.revoke({ refreshToken, userId: req.user.id, sessionId: req.user.sessionId });
-    } finally {
-      clearSessionCookies(res, this.authCookies);
+      await this.sessionService.revokeSession({ userId: req.user.id, sessionId: req.user.sessionId });
+    } catch (error) {
+      if (error.status !== 404) throw error;
     }
+    clearSessionCookies(res, this.authCookies);
     res.status(204).send();
   }
 
