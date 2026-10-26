@@ -25,7 +25,6 @@ son la fuente de verdad de la API y persistencia respectivamente.
 - [06_mqtt-y-procesos-asincronos: tópicos y tareas periódicas](06_mqtt-y-procesos-asincronos.md)
 - [07_autorizacion-y-permisos: permisos, roles y RLS](07_autorizacion-y-permisos.md)
 - [Resumen del contrato HTTP](api.md)
-- [Operación local del conjunto](operacion-local.md)
 - [Contrato OpenAPI: rutas y seguridad](openapi.yaml)
 
 ## Autenticación y autorización
@@ -41,20 +40,16 @@ son la fuente de verdad de la API y persistencia respectivamente.
 El backend se suscribe a telemetría, estado de dispositivo y estado de
 actuadores. Valida mensajes, deduplica `mqttMessageId`, persiste lecturas y
 publica comandos de vínculo o desvínculo. El contrato del ESP32 está en
-[contrato del firmware ESP32](https://github.com/joseale879/PT_HS/blob/hu-15-dev/firmware/mqtt/contract.md).
+[../../firmware/mqtt/contract.md](../../firmware/mqtt/contract.md).
 
 `MQTT_ALLOW_LEGACY_TELEMETRY` debe permanecer en `false` para firmware actual.
 Solo actívalo temporalmente si se está migrando una placa antigua sin
 `mqttMessageId`.
 
-Para la decisión de broker, las variables de producción y los pasos pendientes,
-consulta [Preparación MQTT para producción](mqtt-production.md).
-
 ## Variables importantes
 
 Usa `.env.example` como referencia. Las variables mínimas son `DB_*`,
-`DB_INGEST_*`, `JWT_*`, `CORS_ORIGIN`, `MQTT_BROKER_URL`, `MQTT_USERNAME` y
-`MQTT_PASSWORD`.
+`DB_INGEST_*`, `JWT_*`, `CORS_ORIGIN`, `MQTT_BROKER_URL` y `MQTT_DEVICE_HOST`.
 No documentes ni confirmes valores reales de `.env`.
 
 ## Verificación
@@ -66,5 +61,4 @@ npm.cmd run test:integration
 ```
 
 La integración requiere la pila local y variables `INTEGRATION_*`; consulta
-[05_runtime-tests.md](05_runtime-tests.md) y la
-[guía general de pruebas](https://github.com/joseale879/PT_HS/blob/hu-15-dev/docs/pruebas.md).
+[../../docs/pruebas.md](../../docs/pruebas.md).

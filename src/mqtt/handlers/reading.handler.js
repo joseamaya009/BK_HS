@@ -69,10 +69,7 @@ async function handleReading({ topic, message, context, logger = console, readin
       : null;
 
   const result = { ...reading, persistence };
-  logger.info('[MQTT] Lectura de telemetría procesada', {
-    inserted: persistence?.inserted,
-    duplicate: persistence?.duplicate
-  });
+  logger.info('[MQTT] Lectura de telemetría recibida', result);
   return result;
 }
 
