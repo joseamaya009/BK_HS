@@ -23,7 +23,7 @@ const { getEnv } = require('../config/env');
 const homeRepository = new PostgresHomeRepository();
 const env = getEnv();
 const notificationService = new NotificationService({
-  sender: new SmtpEmailSender({ smtp: env.smtp }),
+  sender: new SmtpEmailSender({ smtp: env.smtp, resend: env.resend, brevo: env.brevo }),
   frontendUrl: env.frontendUrl,
   passwordResetUrl: env.passwordResetUrl
 });
