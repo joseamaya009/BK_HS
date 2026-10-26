@@ -18,7 +18,7 @@ const { SmtpEmailSender } = require('../core/infrastructure/notifications/SmtpEm
 const { getEnv } = require('../config/env');
 const userRepository = new PostgresUserRepository();
 const env = getEnv();
-const notificationService = new NotificationService({ sender: new SmtpEmailSender({ smtp: env.smtp }), frontendUrl: env.frontendUrl, passwordResetUrl: env.passwordResetUrl });
+const notificationService = new NotificationService({ sender: new SmtpEmailSender({ smtp: env.smtp, resend: env.resend, brevo: env.brevo }), frontendUrl: env.frontendUrl, passwordResetUrl: env.passwordResetUrl });
 const userController = new UserController({
   getCurrentUser: new GetCurrentUser({ userRepository }),
   updateCurrentUser: new UpdateCurrentUser({ userRepository, notificationService }),

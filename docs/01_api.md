@@ -71,7 +71,8 @@ formatear la respuesta.
 - **auth.js:** obtiene el token desde cookie HttpOnly o Bearer de compatibilidad,
   lo verifica y carga el usuario autenticado en la petición.
 - **authRateLimit.js:** construye el límite de intentos para rutas sensibles de
-  autenticación, incluyendo una clave que evita depender solo de una IP.
+  autenticación: límite amplio por IP y otro por identificador normalizado y
+  resumido con hash para login, registro y solicitudes de correo.
 - **requirePermission.js:** crea middleware que exige un permiso funcional
   usando el PermissionChecker.
 
@@ -81,9 +82,11 @@ formatear la respuesta.
   refresh y CSRF, compara valores de forma segura y aplica protección CSRF a
   métodos mutables.
 
-Las cookies de sesión son HttpOnly; el token CSRF no lo es para que el cliente
-pueda reflejarlo en el encabezado. La configuración de Secure, SameSite,
-dominio y nombres de cookies sale de src/config/env.js.
+Las cookies de sesión son HttpOnly. `GET /api/v1/auth/csrf` fija la cookie CSRF
+y expone el token en `X-CSRF-Token`; el frontend lee el encabezado, no una
+cookie de otro dominio. Un desajuste devuelve `403` con código
+`CSRF_INVALID`. La configuración de Secure, SameSite, dominio y nombres de
+cookies sale de src/config/env.js.
 
 ## Mapa de prefijos
 
