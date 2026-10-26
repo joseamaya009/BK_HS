@@ -42,11 +42,12 @@ class RegisterUser {
       });
 
       if (verificationId && this.notificationService?.isConfigured?.()) {
-        try {
-          await this.notificationService.sendEmailVerification({ recipient: normalizedEmail, token });
-        } catch (error) {
-          this.logger.error('[AUTH] No se pudo enviar el correo de verificación:', error.message);
-        }
+        // No bloquear la respuesta del registro esperando al proveedor de correo.
+        void Promise.resolve()
+          .then(() => this.notificationService.sendEmailVerification({ recipient: normalizedEmail, token }))
+          .catch((error) => {
+            this.logger.error('[AUTH] No se pudo enviar el correo de verificación:', error.message);
+          });
       }
     }
 
