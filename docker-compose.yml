@@ -23,11 +23,11 @@ services:
       AUDIT_CLEANUP_BATCH_SIZE: ${AUDIT_CLEANUP_BATCH_SIZE:-1000}
       APP_TIMEZONE: ${APP_TIMEZONE:-America/Bogota}
       DB_HOST: ${DB_DOCKER_HOST:-host.docker.internal}
+      DB_SSL: ${DB_SSL:-false}
       DB_PORT: ${DB_DOCKER_PORT:-5433}
       DB_NAME: ${DB_NAME:-hidro_smart}
       DB_USER: ${DB_USER:-hidro_smart_app}
       DB_PASSWORD: ${DB_PASSWORD:?Set_DB_PASSWORD_in_env}
-      DB_SSL: ${DB_SSL:-false}
       DB_POOL_MAX: ${DB_POOL_MAX:-10}
       DB_INGEST_USER: ${DB_INGEST_USER:-hidro_smart_ingest}
       DB_INGEST_PASSWORD: ${DB_INGEST_PASSWORD:?Set_DB_INGEST_PASSWORD_in_env}
@@ -39,6 +39,7 @@ services:
       JWT_AUDIENCE: ${JWT_AUDIENCE:-hidro-smart-web}
       AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-900000}
       AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-20}
+      AUTH_RATE_LIMIT_IP_MAX: ${AUTH_RATE_LIMIT_IP_MAX:-1000}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:-http://localhost:5173/login}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
@@ -47,6 +48,11 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-HidroSmart <no-reply@gmail.com>}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_FROM_EMAIL: ${BREVO_FROM_EMAIL:-}
+      BREVO_FROM_NAME: ${BREVO_FROM_NAME:-HidroSmart}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-HidroSmart <onboarding@resend.dev>}
       REPORT_STORAGE_DIR: /app/storage/reports
       MQTT_BROKER_URL: ${MQTT_DOCKER_BROKER_URL:-mqtt://mosquitto:1883}
       MQTT_CLIENT_ID: ${MQTT_CLIENT_ID:-hidrosmart-backend}
