@@ -6,13 +6,14 @@ dispositivos, consumo, MQTT, reportes y comunicación con PostgreSQL.
 ## Ejecución
 
 La forma recomendada es levantar la pila desde la raíz del conjunto local;
-consulta [docs/operacion-local.md](docs/operacion-local.md).
+consulta [docs/operacion-local.md](docs/operacion-local.md). Este repositorio
+también contiene su propio `docker-compose.yml` y plantilla `.env.example` para
+preparar una ejecución aislada desde su raíz.
 
 Para ejecutar solo el backend se necesita PostgreSQL y Mosquitto accesibles
-desde Windows y un archivo `BK_HS/.env` basado en `.env.example`:
+desde Windows y un archivo `.env` basado en `.env.example`:
 
 ```powershell
-Set-Location BK_HS
 npm.cmd install
 npm.cmd run check
 npm.cmd test
@@ -38,5 +39,5 @@ La preparación de PostgreSQL y Liquibase se realiza con
 
 - [Arquitectura y operación del backend](docs/README.md)
 - [Resumen de API](docs/api.md)
-- [Arquitectura general](../docs/arquitectura.md)
-- [Flujo IoT](../docs/iot.md)
+- [Arquitectura general](https://github.com/joseale879/PT_HS/blob/hu-15-dev/docs/arquitectura.md)
+- [Flujo IoT](https://github.com/joseale879/PT_HS/blob/hu-15-dev/docs/iot.md)
