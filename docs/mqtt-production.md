@@ -136,7 +136,7 @@ permisos de escritura generales. Esa comprobación remota sigue pendiente.
 
 ## Validación y promoción
 
-Desde `Backend-Hidrosmart`, ejecuta `npm.cmd run check` y `npm.cmd test`. Las
+Desde `BK_HS`, ejecuta `npm.cmd run check` y `npm.cmd test`. Las
 pruebas de integración MQTT/PostgreSQL crean y borran filas de prueba; ejecútalas
 solo contra una base desechable y un broker de pruebas, nunca contra Supabase de
 producción. Después de elegir el broker, comprueba `/health/ready`, la
