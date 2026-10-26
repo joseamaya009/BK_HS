@@ -2,7 +2,7 @@
 
 ## Alcance y fuentes
 
-Este documento explica qué hace el backend al recibir mensajes y durante sus jobs. El contrato de topics, BLE, payloads y comandos está en el [contrato del firmware ESP32](https://github.com/joseale879/PT_HS/blob/hu-15-dev/firmware/mqtt/contract.md); esta guía lo complementa, no lo reemplaza.
+Este documento explica qué hace el backend al recibir mensajes y durante sus jobs. El contrato de topics, BLE, payloads y comandos está en [../../firmware/mqtt/contract.md](../../firmware/mqtt/contract.md); esta guía lo complementa, no lo reemplaza.
 
 ## Entrada MQTT
 

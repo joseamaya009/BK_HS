@@ -28,7 +28,7 @@ class MqttPublisher extends IMqttService {
       });
     });
 
-    this.logger.info('[MQTT] Mensaje publicado');
+    this.logger.info(`[MQTT] Mensaje publicado en ${topic}`);
   }
 }
 
