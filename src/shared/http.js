@@ -43,7 +43,7 @@ function errorHandler(error, req, res, _next) {
       : databaseErrorMessage(error) || error.message;
   if (status === 500) console.error(error);
   if (typeof res.setHeader === 'function') res.setHeader('X-Request-Id', requestId);
-  res.status(status).json({ error: { code: errorCode(status), message }, meta: { requestId } });
+  res.status(status).json({ error: { code: error.publicCode || errorCode(status), message }, meta: { requestId } });
 }
 
 function normalizedErrorStatus(error) {
