@@ -38,3 +38,10 @@ test('mapea cuerpos demasiado grandes a un error HTTP uniforme', () => {
   assert.equal(response.body.error.code, 'PAYLOAD_TOO_LARGE');
   assert.equal(response.body.error.message, 'La solicitud supera el tamaño permitido');
 });
+
+test('distingue el rechazo CSRF de otros errores 403', () => {
+  const response = responseDouble();
+  errorHandler({ status: 403, publicCode: 'CSRF_INVALID', message: 'Token CSRF invalido o ausente' }, {}, response, () => {});
+  assert.equal(response.statusCode, 403);
+  assert.equal(response.body.error.code, 'CSRF_INVALID');
+});

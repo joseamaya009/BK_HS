@@ -32,19 +32,27 @@ function cookieOptions(config, { httpOnly, maxAge } = {}) {
   };
 }
 
-function setSessionCookies(res, session, config) {
-  const csrfToken = randomBytes(32).toString('base64url');
+function setCsrfCookie(res, config, existingToken) {
+  const csrfToken = typeof existingToken === 'string' && /^[A-Za-z0-9_-]{43}$/.test(existingToken)
+    ? existingToken
+    : randomBytes(32).toString('base64url');
+  res.cookie(
+    config.csrfTokenName,
+    csrfToken,
+    cookieOptions(config, { httpOnly: false, maxAge: config.refreshMaxAgeMs })
+  );
+  res.setHeader(config.csrfHeaderName, csrfToken);
+  return csrfToken;
+}
+
+function setSessionCookies(res, session, config, existingCsrfToken) {
   res.cookie(config.accessTokenName, session.accessToken, cookieOptions(config, { httpOnly: true }));
   res.cookie(
     config.refreshTokenName,
     session.refreshToken,
     cookieOptions(config, { httpOnly: true, maxAge: config.refreshMaxAgeMs })
   );
-  res.cookie(
-    config.csrfTokenName,
-    csrfToken,
-    cookieOptions(config, { httpOnly: false, maxAge: config.refreshMaxAgeMs })
-  );
+  setCsrfCookie(res, config, existingCsrfToken);
 }
 
 function clearSessionCookies(res, config) {
@@ -77,6 +85,7 @@ function createCsrfProtection(config) {
     if (!tokensEqual(expected, received)) {
       const error = new Error('Token CSRF invalido o ausente');
       error.status = 403;
+      error.publicCode = 'CSRF_INVALID';
       return next(error);
     }
     return next();
@@ -88,5 +97,6 @@ module.exports = {
   createCsrfProtection,
   getCookie,
   parseCookieHeader,
+  setCsrfCookie,
   setSessionCookies
 };

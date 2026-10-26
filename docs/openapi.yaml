@@ -17,6 +17,8 @@ x-csrf-protection:
   applies-when: Una petición mutante usa cookies de sesión de acceso o refresh.
   header: X-CSRF-Token
   cookie: hidrosmart_csrf
+  bootstrap: GET /api/v1/auth/csrf entrega la cookie y expone el token en el header X-CSRF-Token.
+  invalid-response: HTTP 403 con error.code CSRF_INVALID; el cliente puede renovar el token y reintentar una vez.
   note: El nombre del header y de las cookies es configurable; con Bearer sin cookie de sesión no se exige CSRF.
 tags:
   - { name: Health }
@@ -46,6 +48,18 @@ paths:
   /health/ready:
     get: { tags: [Health], summary: Readiness de dependencias, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
 
+  /api/v1/auth/csrf:
+    get:
+      tags: [Auth]
+      summary: Obtener cookie y token CSRF para llamadas mutables
+      security: []
+      responses:
+        '204':
+          description: Token emitido sin cuerpo; no se debe almacenar en caché
+          headers:
+            X-CSRF-Token:
+              description: Token que el cliente envía en llamadas mutables
+              schema: { type: string }
   /api/v1/auth/register:
     post: { tags: [Auth], summary: Registrar cuenta, responses: { default: { $ref: '#/components/responses/Default' } }, security: [] }
   /api/v1/auth/login:
