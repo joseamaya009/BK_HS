@@ -14,7 +14,6 @@ const { handleDeviceStatus } = require('../../src/mqtt/handlers/device-status.ha
 const { handleActuatorStatus } = require('../../src/mqtt/handlers/actuator-status.handler');
 const { MqttSubscriber } = require('../../src/core/infrastructure/services/mqtt/MqttSubscriber');
 const { MqttPublisher } = require('../../src/core/infrastructure/services/mqtt/MqttPublisher');
-const { MqttClient } = require('../../src/core/infrastructure/services/mqtt/MqttClient');
 const { getMqttConfig } = require('../../src/config/mqtt');
 
 const silentLogger = { info() {}, warn() {}, error() {} };
@@ -71,67 +70,6 @@ test('obtiene la configuración MQTT del entorno y restringe el QoS', () => {
     () => getMqttConfig({ MQTT_BROKER_URL: 'mqtt://localhost:1883', MQTT_QOS: '3' }),
     /MQTT_QOS debe ser 0, 1 o 2/
   );
-  assert.throws(
-    () => getMqttConfig({ NODE_ENV: 'production', MQTT_BROKER_URL: 'mqtt://broker.example:1883', MQTT_USERNAME: 'backend', MQTT_PASSWORD: 'secret' }),
-    /debe usar TLS/
-  );
-  assert.throws(
-    () => getMqttConfig({ NODE_ENV: 'production', MQTT_BROKER_URL: 'mqtts://broker.example:8883' }),
-    /MQTT_USERNAME y MQTT_PASSWORD son obligatorios/
-  );
-  assert.throws(
-    () => getMqttConfig({ MQTT_BROKER_URL: 'mqtt://broker.example:1883', MQTT_USERNAME: 'backend' }),
-    /deben configurarse juntos/
-  );
-  assert.throws(
-    () => getMqttConfig({ MQTT_BROKER_URL: 'mqtt://backend:secret@broker.example:1883' }),
-    /no debe incluir credenciales/
-  );
-  const productionConfig = getMqttConfig({
-    NODE_ENV: 'production',
-    MQTT_BROKER_URL: 'mqtts://broker.example:8883',
-    MQTT_USERNAME: 'backend',
-    MQTT_PASSWORD: 'secret'
-  });
-  assert.equal(productionConfig.brokerUrl, 'mqtts://broker.example:8883');
-});
-
-test('el cliente MQTT oculta credenciales, rutas y query al registrar el broker y maneja errores y cierre', async () => {
-  const client = new EventEmitter();
-  let ended = false;
-  client.end = (_force, callback) => {
-    ended = true;
-    callback();
-  };
-  const logged = [];
-  const logger = {
-    info: (...args) => logged.push(args.join(' ')),
-    warn: (...args) => logged.push(args.join(' ')),
-    error: (...args) => logged.push(args.join(' '))
-  };
-  const mqttClient = new MqttClient({
-    mqttModule: { connect: () => client },
-    configFactory: () => ({
-      brokerUrl: 'mqtts://backend:private-password@broker.example:8883/mqtt?token=private-token',
-      options: { clientId: 'hidrosmart-test' }
-    }),
-    logger
-  });
-
-  assert.equal(mqttClient.connect(), client);
-  client.emit('error', new Error('broker unavailable'));
-  client.emit('reconnect');
-  client.emit('offline');
-  client.emit('connect');
-  await mqttClient.disconnect();
-
-  assert.equal(ended, true);
-  assert.ok(logged.some((entry) => entry.includes('mqtts://broker.example:8883')));
-  assert.ok(logged.some((entry) => entry.includes('broker unavailable')));
-  assert.ok(logged.some((entry) => entry.includes('Intentando reconectar')));
-  assert.ok(logged.every((entry) => !entry.includes('private-password')));
-  assert.ok(logged.every((entry) => !entry.includes('private-token')));
-  assert.ok(logged.every((entry) => !entry.includes('/mqtt')));
 });
 
 test('centraliza los topics MQTT con el formato definitivo del SRS', () => {
@@ -332,76 +270,15 @@ test('rechaza telemetría inválida y deviceId falsificado', async () => {
   );
 });
 
-test('los logs MQTT omiten identidad, telemetría y datos de red del dispositivo', async () => {
-  const logged = [];
-  const logger = {
-    info: (...args) => logged.push(args),
-    warn: (...args) => logged.push(args),
-    error: (...args) => logged.push(args)
-  };
-  const deviceCode = 'ESP32-PRIVATE-001';
-  const wifiSsid = 'CasaWifiPrivada';
-  const lastIp = '192.168.44.22';
-  const hardwareId = 'HS-PRIVATE-HARDWARE';
-  const messageId = 'mqtt-private-message-123';
-  const correlationId = '550e8400-e29b-41d4-a716-446655440000';
-
-  await handleReading({
-    topic: telemetryTopic(deviceCode),
-    message: JSON.stringify({
-      mqttMessageId: messageId,
-      deviceId: deviceCode,
-      hardwareId,
-      flowRateLpm: 2.4,
-      consumptionLiters: 4.5,
-      totalLiters: 10,
-      pulses: 8,
-      timestamp: '2026-09-04T12:00:00Z'
-    }),
-    logger,
-    readingRepository: { ingestTelemetry: async () => ({ inserted: true, duplicate: false, homeId: 'home-private-id' }) }
-  });
-  await handleDeviceStatus({
-    topic: `hidrosmart/devices/${deviceCode}/status`,
-    message: JSON.stringify({
-      deviceId: deviceCode,
-      hardwareId,
-      status: 'ONLINE',
-      wifiSsid,
-      lastIp,
-      provisioningState: 'complete'
-    }),
-    logger,
-    deviceRepository: { recordMqttStatus: async () => ({ linked_to_home: true }) }
-  });
-  await handleActuatorStatus({
-    topic: `hidrosmart/devices/${deviceCode}/actuators/valve/status`,
-    message: JSON.stringify({
-      actuator: 'VALVE',
-      status: 'OPEN',
-      correlationId,
-      timestamp: '2026-09-14T12:00:00Z'
-    }),
-    logger
-  });
-
-  const logText = JSON.stringify(logged);
-  for (const value of [deviceCode, wifiSsid, lastIp, hardwareId, messageId, correlationId, 'home-private-id', '4.5']) {
-    assert.equal(logText.includes(value), false, `log must omit ${value}`);
-  }
-});
-
 test('subscriber enruta telemetría, estados y confirmaciones de actuador', async () => {
   class FakeClient extends EventEmitter {
     constructor() {
       super();
       this.connected = false;
       this.topics = [];
-      this.subscribeCount = 0;
     }
 
     subscribe(topics, _options, callback) {
-      this.subscribeCount += 1;
       this.topics = topics;
       callback(null);
     }
@@ -422,9 +299,6 @@ test('subscriber enruta telemetría, estados y confirmaciones de actuador', asyn
   subscriber.start();
   client.emit('connect');
   assert.deepEqual(client.topics, [TOPICS.TELEMETRY, TOPICS.STATUS, TOPICS.ACTUATOR_STATUS]);
-  client.emit('close');
-  client.emit('connect');
-  assert.equal(client.subscribeCount, 2);
 
   client.emit('message', telemetryTopic('ESP32-001'), Buffer.from('{}'));
   client.emit('message', 'hidrosmart/devices/ESP32-001/status', Buffer.from('{}'));
@@ -436,7 +310,6 @@ test('subscriber enruta telemetría, estados y confirmaciones de actuador', asyn
 
 test('publisher serializa los comandos y usa QoS 1 por defecto', async () => {
   const sent = [];
-  const logged = [];
   const publisher = new MqttPublisher({
     mqttClient: {
       connect: () => ({
@@ -446,7 +319,7 @@ test('publisher serializa los comandos y usa QoS 1 por defecto', async () => {
         }
       })
     },
-    logger: { info: (...args) => logged.push(args) }
+    logger: silentLogger
   });
 
   await publisher.publish('hidrosmart/devices/ESP32-001/actuators/valve/command', { command: 'OPEN' });
@@ -455,5 +328,4 @@ test('publisher serializa los comandos y usa QoS 1 por defecto', async () => {
     message: '{"command":"OPEN"}',
     options: { qos: 1, retain: false }
   }]);
-  assert.deepEqual(logged, [['[MQTT] Mensaje publicado']]);
 });

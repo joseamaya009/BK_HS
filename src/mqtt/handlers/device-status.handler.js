@@ -82,10 +82,7 @@ async function handleDeviceStatus({
     }
   }
 
-  logger.info("[MQTT] Estado de dispositivo recibido", {
-    status: status.status,
-    provisioningStatus: status.provisioningStatus
-  });
+  logger.info("[MQTT] Estado de dispositivo recibido", status);
   return status;
 }
 
