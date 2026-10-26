@@ -20,8 +20,13 @@ const authCookies = {
 function cookieResponse() {
   return {
     cookies: [],
+    cleared: [],
+    headers: {},
     cookie(name, value, options) { this.cookies.push({ name, value, options }); },
-    clearCookie() {},
+    setHeader(name, value) { this.headers[name.toLowerCase()] = value; },
+    clearCookie(name) { this.cleared.push(name); },
+    status(code) { this.statusCode = code; return this; },
+    send() { this.sent = true; },
     json(payload) { this.payload = payload; }
   };
 }
@@ -48,9 +53,69 @@ test('guarda access y refresh solo en cookies HttpOnly y no en la respuesta de l
   assert.equal(res.cookies.find((cookie) => cookie.name === authCookies.accessTokenName).options.httpOnly, true);
   assert.equal(res.cookies.find((cookie) => cookie.name === authCookies.refreshTokenName).options.httpOnly, true);
   assert.equal(res.cookies.find((cookie) => cookie.name === authCookies.csrfTokenName).options.httpOnly, false);
+  assert.equal(
+    res.headers[authCookies.csrfHeaderName.toLowerCase()],
+    res.cookies.find((cookie) => cookie.name === authCookies.csrfTokenName).value
+  );
   assert.equal(res.payload.data.accessToken, undefined);
   assert.equal(res.payload.data.refreshToken, undefined);
   assert.equal(res.payload.data.sessionId, '123e4567-e89b-12d3-a456-426614174001');
+});
+
+test('logout revoca la sesión autenticada antes de limpiar las cookies', async () => {
+  const calls = [];
+  const controller = new AuthController({
+    sessionService: { revokeSession: async (input) => calls.push(input) },
+    authCookies
+  });
+  const res = cookieResponse();
+  const user = { id: '123e4567-e89b-12d3-a456-426614174000', sessionId: '123e4567-e89b-12d3-a456-426614174001' };
+
+  await controller.logout({ user, headers: {} }, res);
+
+  assert.deepEqual(calls, [{ userId: user.id, sessionId: user.sessionId }]);
+  assert.deepEqual(res.cleared, ['hidrosmart_access', 'hidrosmart_refresh', 'hidrosmart_csrf']);
+  assert.equal(res.statusCode, 204);
+});
+
+test('logout no aparenta éxito ni limpia cookies si falla la base de datos', async () => {
+  const controller = new AuthController({
+    sessionService: { revokeSession: async () => { throw new Error('database unavailable'); } },
+    authCookies
+  });
+  const res = cookieResponse();
+
+  await assert.rejects(
+    controller.logout({ user: { id: 'u', sessionId: 's' }, headers: {} }, res),
+    /database unavailable/
+  );
+  assert.deepEqual(res.cleared, []);
+  assert.equal(res.statusCode, undefined);
+});
+
+test('emite el token CSRF en cookie y encabezado para clientes cross-origin', () => {
+  const { setCsrfCookie } = require('../../src/api/security/authCookies');
+  const res = cookieResponse();
+  const token = setCsrfCookie(res, authCookies);
+  const csrfCookie = res.cookies.find((cookie) => cookie.name === authCookies.csrfTokenName);
+
+  assert.equal(csrfCookie.value, token);
+  assert.equal(csrfCookie.options.httpOnly, false);
+  assert.equal(res.headers[authCookies.csrfHeaderName.toLowerCase()], token);
+  assert.equal(token.length >= 40, true);
+});
+
+test('conserva un token CSRF existente cuando se renuevan las cookies de sesión', () => {
+  const res = cookieResponse();
+  const existingToken = 'a'.repeat(43);
+
+  setSessionCookies(res, { accessToken: 'new-access', refreshToken: 'new-refresh' }, authCookies, existingToken);
+
+  assert.equal(
+    res.cookies.find((cookie) => cookie.name === authCookies.csrfTokenName).value,
+    existingToken
+  );
+  assert.equal(res.headers[authCookies.csrfHeaderName.toLowerCase()], existingToken);
 });
 
 test('protege peticiones con cookies frente a CSRF y no bloquea clientes Bearer', async () => {
@@ -69,6 +134,7 @@ test('protege peticiones con cookies frente a CSRF y no bloquea clientes Bearer'
     get: () => null
   }, {}, resolve));
   assert.equal(rejected.status, 403);
+  assert.equal(rejected.publicCode, 'CSRF_INVALID');
 
   const allowed = await new Promise((resolve) => protection({
     method: 'PATCH',
