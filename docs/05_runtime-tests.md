@@ -42,6 +42,8 @@
 - **check-javascript.js:** revisa estáticamente archivos JavaScript del backend.
 - **seed-integration-users.js:** prepara usuarios de prueba para integración.
 - **simulate-iot-e2e.js:** simula vínculo, telemetría y desvínculo MQTT de un ESP32.
+- **stress-auth-csrf.js:** simula clientes HTTP para verificar bootstrap CSRF,
+  refresh inválido, CORS y límites compartidos por IP sin usar PostgreSQL.
 
 ### Pruebas de integración
 
@@ -61,6 +63,8 @@
 - **audit-cleanup-job.test.js:** prueba unitaria de audit cleanup job.test.
 - **audit-operations.test.js:** prueba unitaria de audit operations.test.
 - **auth-cookies.test.js:** prueba unitaria de auth cookies.test.
+- **auth-middleware.test.js:** distingue token inválido, sesión revocada y fallo
+  de PostgreSQL durante la autenticación.
 - **auth-rate-limit.test.js:** prueba unitaria de auth rate limit.test.
 - **budget-status.test.js:** prueba unitaria de budget status.test.
 - **change-home-member-role.test.js:** prueba unitaria de change home member role.test.
@@ -118,6 +122,9 @@
 - npm.cmd run test:integration necesita PostgreSQL y MQTT disponibles.
 - npm.cmd run simulate:iot comprueba el recorrido vincular -> telemetría ->
   desvincular con datos de prueba.
+- `node scripts/stress-auth-csrf.js 300 100` comprueba HTTP aislado con 300
+  clientes virtuales y concurrencia máxima 100; no mide login real ni base de
+  datos. No usarlo como evidencia de capacidad de producción.
 
 Las pruebas se organizan por comportamiento. Al modificar un caso de uso,
 repositorio, política de autorización o tópico MQTT, actualiza el test del
