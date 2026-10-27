@@ -109,16 +109,24 @@ class PostgresDeviceRepository extends DeviceRepository {
 
   async linkToHome({ userId, homeId, code, hardwareId }) {
     const result = await withTransaction(userId, async (client) => {
-      const linked = hardwareId
-        ? await client.query(
-            `SELECT device.fn_link_device_to_home_by_hardware($1::varchar, $2::uuid) AS device_id`,
-            [hardwareId, homeId],
-          )
-        : await client.query(
-            `SELECT device.fn_link_device_to_home($1::varchar, $2::uuid) AS device_id`,
-            [code, homeId],
-          );
-      const deviceId = linked.rows[0]?.device_id;
+      let deviceId = null;
+
+      if (code) {
+        const linkedByCode = await client.query(
+          `SELECT device.fn_link_device_to_home($1::varchar, $2::uuid) AS device_id`,
+          [code, homeId],
+        );
+        deviceId = linkedByCode.rows[0]?.device_id || null;
+      }
+
+      if (!deviceId && hardwareId) {
+        const linkedByHardware = await client.query(
+          `SELECT device.fn_link_device_to_home_by_hardware($1::varchar, $2::uuid) AS device_id`,
+          [hardwareId, homeId],
+        );
+        deviceId = linkedByHardware.rows[0]?.device_id || null;
+      }
+
       if (!deviceId) return null;
 
       return client.query(
@@ -678,7 +686,7 @@ class PostgresDeviceRepository extends DeviceRepository {
     const result = await withTransaction(userId, async (client) => {
       const claimed = await client.query(
         `SELECT device_id
-           FROM device.fn_claim_provisioned_device($1::uuid, $2::varchar)`,
+           FROM device.fn_switch_device_hardware($1::uuid, $2::varchar)`,
         [deviceId, hardwareId],
       );
       if (!claimed.rows[0]) return claimed;

@@ -42,12 +42,19 @@ const userRateLimiter = createAuthRateLimiter({
   limit: env.authRateLimitMax,
   keyGenerator: (req) => `user:${req.user.id}`
 });
+const emailSender = new SmtpEmailSender({
+  smtp: env.smtp,
+  resend: env.resend,
+  brevo: env.brevo
+});
+const emailStatus = emailSender.configurationStatus();
+if (!emailStatus.configured) {
+  console.error(
+    `[EMAIL] Correos deshabilitados; proveedor=${emailStatus.provider}; configura: ${emailStatus.missing.join(', ')}`
+  );
+}
 const notificationService = new NotificationService({
-  sender: new SmtpEmailSender({
-    smtp: env.smtp,
-    resend: env.resend,
-    brevo: env.brevo
-  }),
+  sender: emailSender,
   frontendUrl: env.frontendUrl,
   passwordResetUrl: env.passwordResetUrl
 });
