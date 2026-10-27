@@ -6,12 +6,14 @@ class SmtpEmailSender {
     brevo = {},
     resend = {},
     transportFactory = nodemailer.createTransport,
-    fetchImpl = globalThis.fetch
+    fetchImpl = globalThis.fetch,
+    logger = console
   }) {
     this.smtp = smtp;
     this.brevo = brevo;
     this.resend = resend;
     this.fetchImpl = fetchImpl;
+    this.logger = logger;
     this.provider = brevo.apiKey ? 'brevo' : resend.apiKey ? 'resend' : 'smtp';
 
     if (this.provider === 'smtp') {
@@ -29,14 +31,39 @@ class SmtpEmailSender {
     }
   }
 
-  isConfigured() {
+  configurationStatus() {
     if (this.provider === 'brevo') {
-      return Boolean(this.brevo.apiKey && this.brevo.fromEmail);
+      const missing = [];
+      if (typeof this.brevo.apiKey !== 'string' || !this.brevo.apiKey.trim()) {
+        missing.push('BREVO_API_KEY');
+      }
+      if (typeof this.brevo.fromEmail !== 'string' || !this.brevo.fromEmail.trim()) {
+        missing.push('BREVO_FROM_EMAIL');
+      }
+      return { configured: missing.length === 0, missing, provider: this.provider };
     }
-    if (this.provider === 'resend') return Boolean(this.resend.from);
+    if (this.provider === 'resend') {
+      const missing = [];
+      if (typeof this.resend.apiKey !== 'string' || !this.resend.apiKey.trim()) {
+        missing.push('RESEND_API_KEY');
+      }
+      if (typeof this.resend.from !== 'string' || !this.resend.from.trim()) {
+        missing.push('RESEND_FROM');
+      }
+      return { configured: missing.length === 0, missing, provider: this.provider };
+    }
 
+    const missing = [];
+    if (!this.smtp.host) missing.push('SMTP_HOST');
+    if (!this.smtp.port) missing.push('SMTP_PORT');
+    if (!this.smtp.from) missing.push('SMTP_FROM');
     const hasPartialAuth = Boolean(this.smtp.user) !== Boolean(this.smtp.password);
-    return Boolean(this.smtp.host && this.smtp.port && this.smtp.from && !hasPartialAuth);
+    if (hasPartialAuth) missing.push('SMTP_USER/SMTP_PASSWORD');
+    return { configured: missing.length === 0, missing, provider: this.provider };
+  }
+
+  isConfigured() {
+    return this.configurationStatus().configured;
   }
 
   async verifyConfiguration() {
@@ -85,14 +112,14 @@ class SmtpEmailSender {
     const response = await this.fetchImpl('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'api-key': this.brevo.apiKey,
+        'api-key': this.brevo.apiKey.trim(),
         'Content-Type': 'application/json',
         Accept: 'application/json'
       },
       body: JSON.stringify({
         sender: {
           name: this.brevo.fromName || 'HidroSmart',
-          email: this.brevo.fromEmail
+          email: this.brevo.fromEmail.trim()
         },
         to: [{ email: normalizedRecipient }],
         subject,
@@ -118,6 +145,8 @@ class SmtpEmailSender {
       error.status = 502;
       throw error;
     }
+
+    this.logger.info?.(`[BREVO] Solicitud aceptada (messageId=${result.messageId || 'sin id'})`);
 
     return {
       messageId: result.messageId,
