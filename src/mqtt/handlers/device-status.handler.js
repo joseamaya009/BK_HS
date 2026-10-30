@@ -37,6 +37,7 @@ async function handleDeviceStatus({
     wifiSsid: deviceStatus.wifiSsid,
     provisioningStatus: deviceStatus.provisioningStatus,
     linkedToHome: deviceStatus.linkedToHome,
+    measurementEnabled: deviceStatus.measurementEnabled,
   };
 
   if (deviceRepository) {
@@ -52,6 +53,7 @@ async function handleDeviceStatus({
       wifiSsid: status.wifiSsid,
       hardwareId: status.hardwareId,
       provisioningStatus: status.provisioningStatus,
+      measurementEnabled: deviceStatus.measurementEnabled,
     });
   }
 

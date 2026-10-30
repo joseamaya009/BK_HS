@@ -1,5 +1,5 @@
 class Device {
-  constructor({ id = null, code, name, type, hardwareId = null, location = null, manufacturer = null, model = null, alertThreshold = null, status = 'Active', connectivityStatus = 'UNKNOWN', firmwareVersion = null, lastConnectionAt = null, lastIp = null, wifiSsid = null, wifiRssiDbm = null, signalQuality = null, batteryLevel = null, provisioningStatus = 'PENDING', provisioningError = null, provisioningUpdatedAt = null, provisionedAt = null }) {
+  constructor({ id = null, code, name, type, hardwareId = null, location = null, manufacturer = null, model = null, alertThreshold = null, status = 'Active', connectivityStatus = 'UNKNOWN', firmwareVersion = null, lastConnectionAt = null, lastIp = null, wifiSsid = null, wifiRssiDbm = null, signalQuality = null, batteryLevel = null, measurementEnabled = true, measurementUpdatedAt = null, provisioningStatus = 'PENDING', provisioningError = null, provisioningUpdatedAt = null, provisionedAt = null }) {
     this.id = id;
     this.code = Device.validateText(code, 'code', 3, 100);
     this.name = Device.validateText(name, 'name', 1, 100);
@@ -18,6 +18,8 @@ class Device {
     this.wifiRssiDbm = wifiRssiDbm;
     this.signalQuality = signalQuality;
     this.batteryLevel = batteryLevel;
+    this.measurementEnabled = measurementEnabled !== false;
+    this.measurementUpdatedAt = measurementUpdatedAt;
     this.provisioningStatus = provisioningStatus;
     this.provisioningError = provisioningError;
     this.provisioningUpdatedAt = provisioningUpdatedAt;
