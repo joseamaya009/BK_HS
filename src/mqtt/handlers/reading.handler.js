@@ -8,7 +8,7 @@ function assertReportedDevice(context, reportedDeviceId) {
   }
 }
 
-async function handleReading({ topic, message, context, logger = console, readingRepository = null, ingestReading = null, maxPayloadBytes, allowLegacyTelemetry = true }) {
+async function handleReading({ topic, message, context, logger = console, readingRepository = null, ingestReading = null, deviceRepository = null, maxPayloadBytes, allowLegacyTelemetry = true }) {
   const topicContext = context || getTopicContext(topic);
   if (!topicContext || topicContext.type !== 'telemetry') {
     throw new Error(`Topic MQTT de telemetría inválido: ${topic}`);
@@ -38,6 +38,7 @@ async function handleReading({ topic, message, context, logger = console, readin
     sampleIntervalSeconds: telemetry.sampleIntervalSeconds,
     wifiRssiDbm: telemetry.wifiRssiDbm,
     signalQuality: telemetry.signalQuality,
+    measurementEnabled: telemetry.measurementEnabled,
     batteryLevel: telemetry.batteryLevel,
     voltage: telemetry.voltage,
     temperature: telemetry.temperature,
@@ -67,6 +68,28 @@ async function handleReading({ topic, message, context, logger = console, readin
     : readingRepository
       ? await readingRepository.ingestTelemetry(persistenceInput)
       : null;
+
+  // Every valid reading is also a fresh MQTT presence signal. The state field
+  // is persisted through the same guarded function used by status messages.
+  if (deviceRepository && typeof deviceRepository.recordMqttStatus === 'function') {
+    try {
+      await deviceRepository.recordMqttStatus({
+        deviceCode: reading.deviceId,
+        connectivityStatus: 'ONLINE',
+        eventAt: reading.timestamp,
+        firmwareVersion: null,
+        wifiRssiDbm: reading.wifiRssiDbm,
+        signalQuality: reading.signalQuality,
+        batteryLevel: reading.batteryLevel,
+        lastIp: null,
+        wifiSsid: null,
+        hardwareId: reading.hardwareId,
+        measurementEnabled: reading.measurementEnabled,
+      });
+    } catch (error) {
+      logger.warn('[MQTT] No se pudo refrescar presencia desde telemetria:', error.message);
+    }
+  }
 
   const result = { ...reading, persistence };
   logger.info('[MQTT] Lectura de telemetría recibida', result);

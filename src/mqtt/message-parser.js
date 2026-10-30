@@ -229,6 +229,7 @@ function parseOptionalCorrelationId(data) {
 function parseTelemetryMessage(message, { maxPayloadBytes } = {}) {
   const data = parseJsonMessage(message, maxPayloadBytes);
   const signalMetrics = parseSignalMetrics(data);
+  const measurementEnabled = parseOptionalBoolean(data, "measurementEnabled");
 
   return {
     mqttMessageId: parseOptionalMessageId(data),
@@ -253,6 +254,7 @@ function parseTelemetryMessage(message, { maxPayloadBytes } = {}) {
     timestamp: parseTimestamp(data.timestamp),
     reportedDeviceId: parseOptionalDeviceId(data),
     hardwareId: parseOptionalHardwareId(data),
+    ...(measurementEnabled === null ? {} : { measurementEnabled }),
   };
 }
 
@@ -265,6 +267,8 @@ function parseDeviceStatusMessage(message, { maxPayloadBytes } = {}) {
   if (!["ONLINE", "OFFLINE", "ERROR"].includes(status)) {
     throw new Error("status debe ser ONLINE, OFFLINE o ERROR");
   }
+
+  const measurementEnabled = parseOptionalBoolean(data, "measurementEnabled");
 
   return {
     status,
@@ -286,6 +290,7 @@ function parseDeviceStatusMessage(message, { maxPayloadBytes } = {}) {
     reportedDeviceId: parseOptionalDeviceId(data),
     hardwareId: parseOptionalHardwareId(data),
     linkedToHome: parseOptionalBoolean(data, "linkedToHome"),
+    ...(measurementEnabled === null ? {} : { measurementEnabled }),
     provisioningStatus: parseOptionalProvisioningStatus(data),
   };
 }

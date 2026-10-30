@@ -17,6 +17,7 @@ class PostgresDeviceRepository extends DeviceRepository {
     wifiSsid,
     hardwareId,
     provisioningStatus,
+    measurementEnabled = null,
   }) {
     const result = await withTransaction(null, async (client) => {
       const statusResult = await client.query(
@@ -45,6 +46,19 @@ class PostgresDeviceRepository extends DeviceRepository {
       }
 
       const deviceRow = statusResult.rows[0];
+      if (deviceRow && typeof measurementEnabled === "boolean") {
+        const measurementResult = await client.query(
+          `SELECT device_id, measurement_enabled, measurement_updated_at
+             FROM device.fn_record_device_measurement_state($1::varchar, $2::boolean, $3::timestamptz)`,
+          [deviceCode, measurementEnabled, eventAt],
+        );
+        const measurementRow = measurementResult.rows[0];
+        if (measurementRow) {
+          deviceRow.measurement_enabled = measurementRow.measurement_enabled;
+          deviceRow.measurement_updated_at = measurementRow.measurement_updated_at;
+        }
+      }
+
       if (deviceRow) {
         const linkedResult = await client.query(
           `SELECT EXISTS (
@@ -134,7 +148,7 @@ class PostgresDeviceRepository extends DeviceRepository {
                 d.model, d.umbral_alerta, d.status, d.firmware_version,
                 d.connectivity_status, d.last_connection_at, d.last_ip, d.wifi_ssid, d.wifi_rssi_dbm,
                 d.signal_quality, d.battery_level, d.provisioning_status,
-                d.provisioning_error, d.provisioning_updated_at, d.provisioned_at
+                d.provisioning_error, d.provisioning_updated_at, d.provisioned_at, d.measurement_enabled, d.measurement_updated_at
            FROM device.device d
           WHERE d.device_id = $1::uuid
           LIMIT 1`,
@@ -163,6 +177,8 @@ class PostgresDeviceRepository extends DeviceRepository {
           wifiRssiDbm: row.wifi_rssi_dbm,
           signalQuality: row.signal_quality,
           batteryLevel: row.battery_level,
+          measurementEnabled: row.measurement_enabled,
+          measurementUpdatedAt: row.measurement_updated_at,
           provisioningStatus: row.provisioning_status,
           provisioningError: row.provisioning_error,
           provisioningUpdatedAt: row.provisioning_updated_at,
@@ -178,7 +194,7 @@ class PostgresDeviceRepository extends DeviceRepository {
               d.model, d.umbral_alerta, d.status, d.firmware_version,
               d.connectivity_status, d.last_connection_at, d.last_ip, d.wifi_ssid, d.wifi_rssi_dbm,
               d.signal_quality, d.battery_level, d.provisioning_status,
-              d.provisioning_error, d.provisioning_updated_at, d.provisioned_at, d.created_at
+              d.provisioning_error, d.provisioning_updated_at, d.provisioned_at, d.measurement_enabled, d.measurement_updated_at, d.created_at
          FROM device.device d
          JOIN home.home_device hd ON hd.device_id = d.device_id
          JOIN home.home_user hu ON hu.home_id = hd.home_id
@@ -211,6 +227,8 @@ class PostgresDeviceRepository extends DeviceRepository {
           wifiRssiDbm: row.wifi_rssi_dbm,
           signalQuality: row.signal_quality,
           batteryLevel: row.battery_level,
+          measurementEnabled: row.measurement_enabled,
+          measurementUpdatedAt: row.measurement_updated_at,
           provisioningStatus: row.provisioning_status,
           provisioningError: row.provisioning_error,
           provisioningUpdatedAt: row.provisioning_updated_at,
@@ -226,7 +244,7 @@ class PostgresDeviceRepository extends DeviceRepository {
               d.model, d.umbral_alerta, d.status, d.firmware_version,
               d.connectivity_status, d.last_connection_at, d.last_ip, d.wifi_ssid, d.wifi_rssi_dbm,
               d.signal_quality, d.battery_level, d.provisioning_status,
-              d.provisioning_error, d.provisioning_updated_at, d.provisioned_at
+              d.provisioning_error, d.provisioning_updated_at, d.provisioned_at, d.measurement_enabled, d.measurement_updated_at
          FROM device.device d
          JOIN home.home_device hd ON hd.device_id = d.device_id
          JOIN home.home_user hu ON hu.home_id = hd.home_id
@@ -259,6 +277,8 @@ class PostgresDeviceRepository extends DeviceRepository {
           wifiRssiDbm: row.wifi_rssi_dbm,
           signalQuality: row.signal_quality,
           batteryLevel: row.battery_level,
+          measurementEnabled: row.measurement_enabled,
+          measurementUpdatedAt: row.measurement_updated_at,
           provisioningStatus: row.provisioning_status,
           provisioningError: row.provisioning_error,
           provisioningUpdatedAt: row.provisioning_updated_at,
@@ -276,7 +296,7 @@ class PostgresDeviceRepository extends DeviceRepository {
                d.firmware_version, d.connectivity_status, d.last_connection_at,
                d.last_ip, d.wifi_ssid, d.wifi_rssi_dbm, d.signal_quality, d.battery_level,
               d.provisioning_status, d.provisioning_error,
-              d.provisioning_updated_at, d.provisioned_at
+              d.provisioning_updated_at, d.provisioned_at, d.measurement_enabled, d.measurement_updated_at
          FROM device.device d
          JOIN home.home_device hd ON hd.device_id = d.device_id
          JOIN home.home_user hu ON hu.home_id = hd.home_id
@@ -310,6 +330,8 @@ class PostgresDeviceRepository extends DeviceRepository {
           wifiRssiDbm: row.wifi_rssi_dbm,
           signalQuality: row.signal_quality,
           batteryLevel: row.battery_level,
+          measurementEnabled: row.measurement_enabled,
+          measurementUpdatedAt: row.measurement_updated_at,
           provisioningStatus: row.provisioning_status,
           provisioningError: row.provisioning_error,
           provisioningUpdatedAt: row.provisioning_updated_at,
@@ -467,7 +489,7 @@ class PostgresDeviceRepository extends DeviceRepository {
         RETURNING device_id, code, name, type, location, manufacturer, model,
                   umbral_alerta, status, firmware_version, last_connection_at,
                   last_ip, wifi_ssid, hardware_id, provisioning_status, provisioning_error,
-                  provisioning_updated_at, provisioned_at`,
+                  provisioning_updated_at, provisioned_at, measurement_enabled, measurement_updated_at`,
         [
           deviceId,
           name ?? null,
@@ -531,7 +553,7 @@ class PostgresDeviceRepository extends DeviceRepository {
           RETURNING device_id, code, name, type, location, manufacturer, model,
                     umbral_alerta, status, firmware_version, last_connection_at,
                     last_ip, wifi_ssid, hardware_id, provisioning_status, provisioning_error,
-                    provisioning_updated_at, provisioned_at`,
+                    provisioning_updated_at, provisioned_at, measurement_enabled, measurement_updated_at`,
         [deviceId, calibrationFactor, calibrationOffset],
       );
       if (!updated.rowCount) return null;
@@ -589,7 +611,7 @@ class PostgresDeviceRepository extends DeviceRepository {
                 d.manufacturer, d.model, d.umbral_alerta, d.status, d.firmware_version,
                 d.connectivity_status, d.last_connection_at, d.last_ip, d.wifi_ssid,
                 d.wifi_rssi_dbm, d.signal_quality, d.battery_level, d.provisioning_status,
-                d.provisioning_error, d.provisioning_updated_at, d.provisioned_at
+                d.provisioning_error, d.provisioning_updated_at, d.provisioned_at, d.measurement_enabled, d.measurement_updated_at
            FROM device.device d
           WHERE d.device_id = $1::uuid
           LIMIT 1`,
@@ -618,6 +640,8 @@ class PostgresDeviceRepository extends DeviceRepository {
       wifiRssiDbm: row.wifi_rssi_dbm,
       signalQuality: row.signal_quality,
       batteryLevel: row.battery_level,
+      measurementEnabled: row.measurement_enabled,
+      measurementUpdatedAt: row.measurement_updated_at,
       provisioningStatus: row.provisioning_status,
       provisioningError: row.provisioning_error,
       provisioningUpdatedAt: row.provisioning_updated_at,
@@ -645,7 +669,7 @@ class PostgresDeviceRepository extends DeviceRepository {
                 d.manufacturer, d.model, d.umbral_alerta, d.status, d.firmware_version,
                 d.connectivity_status, d.last_connection_at, d.last_ip, d.wifi_ssid,
                 d.wifi_rssi_dbm, d.signal_quality, d.battery_level, d.provisioning_status,
-                d.provisioning_error, d.provisioning_updated_at, d.provisioned_at
+                d.provisioning_error, d.provisioning_updated_at, d.provisioned_at, d.measurement_enabled, d.measurement_updated_at
            FROM device.device d
           WHERE d.device_id = $1::uuid
           LIMIT 1`,
@@ -674,6 +698,8 @@ class PostgresDeviceRepository extends DeviceRepository {
           wifiRssiDbm: row.wifi_rssi_dbm,
           signalQuality: row.signal_quality,
           batteryLevel: row.battery_level,
+          measurementEnabled: row.measurement_enabled,
+          measurementUpdatedAt: row.measurement_updated_at,
           provisioningStatus: row.provisioning_status,
           provisioningError: row.provisioning_error,
           provisioningUpdatedAt: row.provisioning_updated_at,
@@ -696,7 +722,7 @@ class PostgresDeviceRepository extends DeviceRepository {
                 model, umbral_alerta, status, firmware_version,
                 connectivity_status, last_connection_at, last_ip, wifi_ssid, wifi_rssi_dbm,
                 signal_quality, battery_level, provisioning_status,
-                provisioning_error, provisioning_updated_at, provisioned_at
+                provisioning_error, provisioning_updated_at, provisioned_at, measurement_enabled, measurement_updated_at
            FROM device.device
           WHERE device_id = $1::uuid`,
         [deviceId],
@@ -724,6 +750,8 @@ class PostgresDeviceRepository extends DeviceRepository {
           wifiRssiDbm: row.wifi_rssi_dbm,
           signalQuality: row.signal_quality,
           batteryLevel: row.battery_level,
+          measurementEnabled: row.measurement_enabled,
+          measurementUpdatedAt: row.measurement_updated_at,
           provisioningStatus: row.provisioning_status,
           provisioningError: row.provisioning_error,
           provisioningUpdatedAt: row.provisioning_updated_at,
