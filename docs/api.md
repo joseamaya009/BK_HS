@@ -44,5 +44,14 @@ El orden funcional es:
 2. El dispositivo comunica su `hardwareId`; el backend lo reclama y publica
    la confirmación por MQTT.
 3. `PUT /devices/:deviceId/config` guarda configuración operativa permitida.
-4. `DELETE /devices/:deviceId/home/:homeId` desvincula y ordena reactivar BLE.
-5. `DELETE /devices/:deviceId` solo debe realizarse después de desvincular.
+4. `POST /devices/:deviceId/measurement` recibe `{ "enabled": false }` para
+   pausar el consumo contabilizado y activar la vigilancia de fugas. La respuesta
+   `202` confirma que MQTT aceptó el comando, no que el ESP32 ya lo aplicó; el
+   backend actualiza el estado cuando recibe `measurementEnabled` en el estado
+   retenido o en telemetría.
+5. En vigilancia, el ESP32 sigue enviando caudal y pulsos, informa
+   `consumptionLiters: 0` y mantiene fijo `totalLiters`; al reanudar, vuelve a
+   contabilizar el volumen. La regla activa del hogar genera la alerta de fuga
+   después de detectar flujo continuo durante el umbral configurado.
+6. `DELETE /devices/:deviceId/home/:homeId` desvincula y ordena reactivar BLE.
+7. `DELETE /devices/:deviceId` solo debe realizarse después de desvincular.

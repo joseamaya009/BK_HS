@@ -58,6 +58,7 @@ router.get('/hardware/:hardwareId', asyncHandler((req, res) => deviceController.
 router.get('/:deviceId/status', asyncHandler((req, res) => deviceController.status(req, res)));
 router.get('/:deviceId/telemetry', asyncHandler((req, res) => deviceController.telemetry(req, res)));
 router.get('/:deviceId/telemetry/latest', asyncHandler((req, res) => deviceController.latestTelemetry(req, res)));
+router.post('/:deviceId/measurement', requirePermission('devices.manage'), asyncHandler((req, res) => deviceController.setMeasurement(req, res)));
 router.put('/:deviceId', requirePermission('devices.manage'), asyncHandler((req, res) => deviceController.update(req, res)));
 router.put('/:deviceId/config', requirePermission('devices.manage'), asyncHandler((req, res) => deviceController.updateConfig(req, res)));
 router.patch('/:deviceId/status', requirePermission('devices.manage'), asyncHandler((req, res) => deviceController.updateStatus(req, res)));
